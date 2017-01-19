@@ -1,0 +1,10 @@
+name: Wiki
+main: io.github.skyylord.McWiki.Wiki
+version: 1.2
+commands: 
+  wiki:
+    description: Gives sender a link to Minecraftwiki.
+permissions:
+  coolwiki.*:
+    description: all commands
+    default: true
