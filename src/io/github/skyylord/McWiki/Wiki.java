@@ -1,8 +1,8 @@
 package io.github.skyylord.McWiki;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.plugin.java.JavaPlugin;
 
 public class Wiki extends JavaPlugin{
 	//config setup:
@@ -30,16 +30,25 @@ public class Wiki extends JavaPlugin{
 	    @Override
 	    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 	    	if (cmd.getName().equalsIgnoreCase("wiki")) { 
-	    		if(args.length != 1){
+	    		if(args.length == 0){
+	    			
 	    			sender.sendMessage(config.getString("failMessage"));
 	    			sender.sendMessage(config.getString("usageMessage"));
 	    			return false;
+	    		}
+	    		if(args.length >= 1){
+	    			
+	    			sender.sendMessage(config.getString("colorCode") + "minecraft.gamepedia.com/ + args[1]";
+	    			
+	    			
+	    			
 	    		}
 	    		sender.sendMessage(config.getString("colorCode") + "minecraft.gamepedia.com/" + args[0]);
 	    		return true;
 	    	}
 	    	return false;
 	    }
+	    
+	     
 
 }
-
