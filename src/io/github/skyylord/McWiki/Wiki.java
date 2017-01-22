@@ -5,14 +5,16 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class Wiki extends JavaPlugin{
+	
 	//config setup:
 	FileConfiguration config = getConfig(); 
 	
 	//on enable:
 	  @Override
 	    public void onEnable() {
-		  //build
-		  config.addDefault("failMessage", "Links you to the wiki.");
+		  //build config 
+		  
+		  config.addDefault("onFailure", "Links you to the wiki.");
 		  config.addDefault("usageMessage", "/wiki [article]");
 		  config.addDefault("colorCode", "§b");
 		  config.options().copyDefaults(true);
@@ -23,7 +25,7 @@ public class Wiki extends JavaPlugin{
 	    //on disable:
 	    @Override
 	    public void onDisable() {
-	    	//cleanup
+	    	//cleanup 
 
 	    }
 	    
@@ -31,22 +33,29 @@ public class Wiki extends JavaPlugin{
 	    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 	    	if (cmd.getName().equalsIgnoreCase("wiki")) { 
 	    		if(args.length == 0){
-	    			
-	    			sender.sendMessage(config.getString("failMessage"));
+	    			sender.sendMessage(config.getString("onFailure"));
 	    			sender.sendMessage(config.getString("usageMessage"));
-	    			return false;
+	    			return true; 
 	    		}
-	    		if(args.length >= 1){
-	    			
-	    			sender.sendMessage(config.getString("colorCode") + "minecraft.gamepedia.com/ + args[1]";
-	    			
-	    			
-	    			
+	    		String article = "";
+	    		//for loop that takes args, adds underscores, doesnt for last arg;
+	    		for(int i = 0; i < args.length; i++){	
+	    			if(i == args.length-1){
+	    				article = article + args[i];
+	    			}else{
+	    			 article = article + args[i] + "_";
+	    			}
 	    		}
-	    		sender.sendMessage(config.getString("colorCode") + "minecraft.gamepedia.com/" + args[0]);
+	    		sender.sendMessage(wikiMessage() + article);
 	    		return true;
-	    	}
+	    		}
 	    	return false;
+	    	
+	    }
+	    
+	    private String wikiMessage(){
+	    	return(config.getString("colorCode") + "minecraft.gamepedia.com/");
+	    			    	    
 	    }
 	    
 	     
