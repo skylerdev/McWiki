@@ -1,6 +1,6 @@
 name: Wiki
 main: io.github.skyylord.McWiki.Wiki
-version: 1.2
+version: 1.4
 commands: 
   wiki:
     description: Gives sender a link to Minecraftwiki.
