@@ -16,7 +16,7 @@ public class Wiki extends JavaPlugin{
 		  
 		  config.addDefault("onFailure", "Links you to the wiki.");
 		  config.addDefault("usageMessage", "/wiki [article]");
-		  config.addDefault("colorCode", "§b");
+		  config.addDefault("messageToSend", "§b{article}§b: §o{link}");
 		  config.options().copyDefaults(true);
 		  saveConfig();
 		 
@@ -25,7 +25,7 @@ public class Wiki extends JavaPlugin{
 	    //on disable:
 	    @Override
 	    public void onDisable() {
-	    	//cleanup 
+	    	//cleanup "
 
 	    }
 	    
@@ -38,7 +38,7 @@ public class Wiki extends JavaPlugin{
 	    			return true; 
 	    		}
 	    		String article = "";
-	    		//for loop that takes args, adds underscores, doesnt for last arg;
+	    		//for loop that takes arg, adds underscore;, doesnt for last arg;
 	    		for(int i = 0; i < args.length; i++){	
 	    			if(i == args.length-1){
 	    				article = article + args[i];
@@ -46,18 +46,24 @@ public class Wiki extends JavaPlugin{
 	    			 article = article + args[i] + "_";
 	    			}
 	    		}
-	    		sender.sendMessage(wikiMessage() + article);
+	    		sender.sendMessage(wikiMessage(article));
 	    		return true;
 	    		}
 	    	return false;
 	    	
 	    }
 	    
-	    private String wikiMessage(){
-	    	return(config.getString("colorCode") + "minecraft.gamepedia.com/");
+	    private String wikiMessage(String article){
+	    	String currentMessage = config.getString("messageToSend");
+	    	currentMessage.replaceAll("(\\{article\\})", article);
+	    	currentMessage.replaceAll("(\\{link\\})", "minecraft.gamepedia.com/" + article);
+	    	
+	    	return(currentMessage);
 	    			    	    
 	    }
 	    
 	     
 
 }
+
+
