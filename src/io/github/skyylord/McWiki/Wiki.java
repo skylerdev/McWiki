@@ -6,6 +6,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class Wiki extends JavaPlugin{
 	
+	//version 1.5 
+	
 	//config setup:
 	FileConfiguration config = getConfig(); 
 	
