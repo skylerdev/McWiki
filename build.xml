@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<project name="McWiki" default="autojar" basedir=".">
+
+  <property environment="env"/>
+  <property name="build" location="build"/>
+  <property name="dist" location="dist"/>
+  <property name="src" location="src"/>
+  <property name="lib" location="lib"/>
+  <property name="exportfolder" value="/Users/skyler/mcassets/spigot/plugins"/>
+  <echo message="JAVA_HOME: ${env.JAVA_HOME}"/>
+
+
+	<target name="autojar" description="Create Jar file">
+		       <jar jarfile="${exportfolder}/McWiki.jar" basedir="" includes="*.yml, **/*.*"/>
+	 </target>
+
+</project>

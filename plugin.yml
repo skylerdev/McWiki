@@ -1,10 +1,18 @@
 name: Wiki
 main: io.github.skyylord.McWiki.Wiki
-version: 1.4
+version: 2.0
+
+
 commands: 
   wiki:
-    description: Gives sender a link to Minecraftwiki.
+    description: main command.
+    permission: mcwiki.wiki
 permissions:
-  coolwiki.*:
+  mcwiki.*:
     description: all commands
+    default: true
+    children:
+      mcwiki.wiki: true
+  mcwiki.wiki:
+    description: perm node for wiki
     default: true
