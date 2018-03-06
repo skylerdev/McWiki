@@ -1,18 +1,24 @@
-name: Wiki
-main: io.github.skyylord.McWiki.Wiki
+name: McWiki
+main: io.github.skyylord.McWiki.McWiki
 version: 2.0
+description: A robust and complete minecraft wiki integration into the game.
+author: EdgyKid
 
 
 commands: 
   wiki:
-    description: main command.
+    usage: /<commmand> <article>
+    description: Gives the sender the minecraft wiki article for article.
     permission: mcwiki.wiki
+  mcwiki: 
+    usage: /<command>
+    description: Meta information about mcwiki.
+    permission: mcwiki.mod
+  
 permissions:
-  mcwiki.*:
-    description: all commands
-    default: true
-    children:
-      mcwiki.wiki: true
   mcwiki.wiki:
-    description: perm node for wiki
+    description: Permission for /wiki
     default: true
+  mcwiki.mod:
+    description: Permission for /mcwiki
+    default: op
