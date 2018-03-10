@@ -1,0 +1,18 @@
+#   //-----------=========-----------\\
+#  ||  Welcome to McWiki's config.    ||
+#   \\-----------=========-----------//
+
+#Some quick doublechecks:
+#Use spaces instead of tabs
+#make sure youre indenting properly!
+
+#This determines the SOURCE LANGUAGE to obtain articles from.
+#Defaults to en for English: minecraft-en.gamepedia.com
+#examples: de for Deutsch, es for Espanol, etc. 
+
+language: en
+
+#How many <p> elements to show before stopping, and linking the full article.
+#Defaults to 5.
+
+cutoff: 5
