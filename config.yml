@@ -12,44 +12,7 @@
 
 language: en
 
-#Formatting
-#For each element encountered in the wiki (<b>, <i>, <span>, etc) 
-#a number of formatting choices can be made, for each object in minecraft tellraw json.
-#See: https://minecraft.gamepedia.com/Commands#Raw_JSON_text
+#How many <p> elements to show before stopping, and linking the full article.
+#Defaults to 5.
 
-#NOTE: when denoting a color, use standard color names (aqua) but when marking up text, use code (&b).
-
-#  // Formatting guide //
-
-# b: bold. For an article referring to itself.
-# i: italic. Conveys special or meta information.
-# a: anchor. Used to link to other articles.
-# <b>Wood</b> is a <i>naturally occurring block</i> found in <a>trees</a>.
-
-
-formatting:
-  b: 
-    bold: true
-    color: aqua
-  i:
-    italic: true
-    color: gold
-    hoverEvent:
-      action: show_text
-      value: this is italic text, when mouse is hovering over!
-  a:
-    color: aqua
-    hoverEvent:
-      action: show_text
-      value: Opens up {article}.
-    clickEvent:
-      action: run_command
-      value: /wiki {article.
-
-
-
-
-
-
-
-
+cutoff: 5

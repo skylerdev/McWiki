@@ -1,24 +1,29 @@
 package io.github.skylerdev.McWiki;
 
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.List;
 
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 
 public class CommandWiki implements CommandExecutor {
 
-    private static final Logger LOGGER = Logger.getLogger("McWiki");
+    //private static final Logger LOGGER = Logger.getLogger("McWiki");
+   //private static final Plugin mcwiki = Bukkit.getPluginManager().getPlugin("McWiki");
 
-    private static String selector = "div[id=mw-content-text] > p";
-    
+    final String selector = "div[id=mw-content-text] > p";
     
 
     @Override
@@ -28,28 +33,86 @@ public class CommandWiki implements CommandExecutor {
                 return false;
             }
 
+            FileConfiguration config = Bukkit.getPluginManager().getPlugin("McWiki").getConfig();
+            
             final String article = underscore(args);
 
-            String articleurl = "http://www.minecraft.gamepedia.com/" + article;
-
-            sender.sendMessage("Getting " + article + "...");
+            final String lang = config.getString("language");
+        //    final boolean bookMode = McWiki.getBookMode();
+            final int cutoff = config.getInt("cutoff");
+            
+            final String articleurl;
+            if(lang.equals("en")) {
+                articleurl = "http://www.minecraft.gamepedia.com/" + article;
+            }else {
+                articleurl = "http://www.minecraft-"+lang+".gamepedia.com/" + article;
+            }
 
             asyncFetchArticle(articleurl, new DocumentGetCallback() {
 
+                @SuppressWarnings("unchecked")
                 @Override
                 public void onQueryDone(Document doc) {
                     if (doc.baseUri().equals("404")) {
                         sender.sendMessage("404 error. Check the article name and try again.");
                         return;
                     }
-                    LOGGER.log(Level.INFO, "Fetching " + doc.title());
+                    String title = doc.getElementById("firstHeading").text();
+
+                    sender.sendMessage("§d>>>  MCWIKI: " + title + "§d  <<<");
 
                     Elements main = doc.select(selector);
+                    JSONArray json = new JSONArray();
+                    json.add(""); // resets inheritance
 
-                    for (Element e : main) {
-                        sender.sendMessage(e.toString());
+                    int lines = 0;
+                    for (Element p : main) {
+                        List<Node> inner = p.childNodes();
+                        for (Node n : inner) {
+                            if (n instanceof Element) {
 
+                                Element e = (Element) n;
+
+                                if (e.is("a")) {
+                                    Link l = new Link(e);
+                                    json.add(l);
+
+                                } else if (e.is("b")) {
+                                    Bold b = new Bold(e);
+                                    json.add(b);
+
+                                } else if (e.is("i")) {
+                                    Italic i = new Italic(e);
+                                    json.add(i);
+
+                                } else if (e.is("span")) {
+                                    // ignore span for now
+
+                                }
+
+                            }
+                            if (n instanceof TextNode) {
+                                JSONObject text = new JSONObject();
+                                text.put("text", ((TextNode) n).text());
+
+                                json.add(text);
+
+                            }
+                        }
+
+                        json.add("\n");
+                        lines++;
+                        // cutoff
+                        if (lines > cutoff) {
+                            Link pagelink = new Link("§d>>>   Limit reached. Click me to read more   <<<", articleurl);
+                            json.add(pagelink);
+                            break;
+                        }
                     }
+
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
+                            "tellraw " + sender.getName() + " " + json.toString());
+
                 }
             });
 
@@ -58,6 +121,15 @@ public class CommandWiki implements CommandExecutor {
         return false;
     }
 
+    /**
+     * Fetches the article from the web, asynchronously.
+     * 
+     * @param url
+     *            url of article to fetch.
+     * @param callback
+     *            callback to implement when done fetching.
+     * 
+     */
     private void asyncFetchArticle(final String url, final DocumentGetCallback callback) {
         // async run
         Bukkit.getScheduler().runTaskAsynchronously(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
@@ -65,8 +137,6 @@ public class CommandWiki implements CommandExecutor {
             public void run() {
                 try {
                     final Document doc = Jsoup.connect(url).get();
-                    // regular callback
-
                     Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
                         @Override
                         public void run() {
@@ -74,7 +144,8 @@ public class CommandWiki implements CommandExecutor {
                         }
                     });
                 } catch (IOException e) {
-                    // 404 or error, will get handled by callback
+                    // ERROR. Must be handled by callback code. 
+                    // Probably not the right way to do this xdddd
                     Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
                         @Override
                         public void run() {
@@ -88,11 +159,10 @@ public class CommandWiki implements CommandExecutor {
     }
 
     /**
-     * Replaces spaces with underscores.
+     * Helper method, replaces spaces with underscores.
      * 
      * @param String[]
      *            args
-     * @return true if url was fetched successfully
      */
     private String underscore(String[] args) {
         String a = "";

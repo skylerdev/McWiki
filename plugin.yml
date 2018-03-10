@@ -7,11 +7,11 @@ author: EdgyKid
 
 commands: 
   wiki:
-    usage: /<commmand> <article>
+    usage: /wiki <article>
     description: Gives the sender the minecraft wiki article for article.
     permission: mcwiki.wiki
   mcwiki: 
-    usage: /<command>
+    usage: /mcwiki
     description: Meta information about mcwiki.
     permission: mcwiki.mod
   
