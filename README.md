@@ -23,7 +23,9 @@ cutoff: amount of p elements to display. Default: 5.
 
 ## Donate
 
-<p>I plan to implement a fully functional book GUI interface option, including table of contents and actual information screening. If you would like to see this made, please fund continued development of this plugin [here](paypal.me/skylerdv) :)</p>
+I plan to implement a fully functional book GUI interface option, including table of contents and actual information screening. If you would like to see this get made, please fund continued development of this plugin  :) <br>
 
-<p>[SpigotMc](https://www.spigotmc.org/resources/mcwiki.35039/)</p>
-<p>[Github](https://github.com/skylerdev/mcwiki)</p>
+[Donate](https://paypal.me/skylerdv)
+
+[SpigotMc](https://www.spigotmc.org/resources/mcwiki.35039)<br>
+[Github](https://github.com/skylerdev/mcwiki)<br>
