@@ -12,11 +12,6 @@ public class McWiki extends JavaPlugin {
 
     private static final Logger LOGGER = Logger.getLogger("McWiki");
 
-    FileConfiguration config = getConfig();
-
-    private static String lang = "en";
-    private static int cutoff = 5;
-    private static boolean bookMode = true;
 
     @Override
     public void onEnable() {
@@ -35,27 +30,23 @@ public class McWiki extends JavaPlugin {
             if(args.length != 0) {
                 if(args[0].equals("reload")) {
                     sender.sendMessage("§aReloaded McWiki config.");
-                    reloadConfig();
-                    config = this.getConfig();
+                    reload();
+                    
                     return true;
                 }
             }
-            sender.sendMessage(this.toString() + ". Made with love by EdgyKid.");
+            sender.sendMessage(this.toString() + ". Made with love by EdgyKid <3");
             return true;
         }
         return true;
         
     }
 
-   /*
+   
     public void reload() {
         reloadConfig();
-        
-        readConfig();
-        
-        
     }
-    
+    /*
     public void readConfig() {
         String clang = config.getString("language");
         if (clang.length() != 2) {

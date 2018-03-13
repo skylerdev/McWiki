@@ -12,7 +12,13 @@
 
 language: en
 
-#How many <p> elements to show before stopping, and linking the full article.
-#Defaults to 5.
+#Whether to use the chat, or the default method of a book.
+#Defaults to false
 
-cutoff: 5
+chatmode: false
+
+#How many <p> elements to show in the chat before stopping.
+#Defaults to 5. Only effects if chatmode is true.
+
+chatcutoff: 5
+
