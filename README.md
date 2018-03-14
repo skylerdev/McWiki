@@ -21,7 +21,7 @@ Full json text interface<br>
 
 ## Config
 
-bookmode: defaults to true. If false, displays in chat instead of book.
+bookmode: defaults to true. If false, displays in chat instead of book.<br>
 language: source language to retrieve articles from. eg: 'es' or 'de'<br>
 cutoff: amount of p elements to display. Default: 5.
 
