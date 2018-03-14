@@ -90,10 +90,6 @@ public class CommandWiki implements CommandExecutor {
                             }
                             if (n instanceof TextNode) {
                                 MCJson text = new MCJson(((TextNode) n).text());
-                                //unorthodox fix
-                                if(bookMode) {
-                                    text.setColor("black");
-                                }
                                 line.add(text);
                             }
                         }
@@ -108,7 +104,7 @@ public class CommandWiki implements CommandExecutor {
 
                         List<String> pages = new ArrayList<String>();
                         pages.add(BookDefaults.titlePage(title, articleurl)); 
-                        for (int i = 0; i < json.size() - 1; i++) {     
+                        for (int i = 0; i < json.size() - 1; i++) {                  
                             pages.add(json.get(i).toString());                        
                         }
                         pages.add(BookDefaults.endPage());
