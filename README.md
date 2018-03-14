@@ -7,25 +7,27 @@ This plugin aims to present information that can only be accessed through the mi
 
 ## Features
 
-Displays information from the minecraft wiki in player's chat window<br>
-Configurable amount of information, as well as language<br>
+Displays information from the minecraft wiki in player chat or book<br>
+Configurable amount of lines in chat<br>
+Multi language support<br>
+Full json text interface<br>
+
 
 ## Commands
 
-**/wiki [article]:** displays content of article in chat.<br>
+**/wiki [article]:** displays content of article.<br>
 **/mcwiki:** displays meta information.<br>
 **/mcwiki reload:** reloads config.<br>
 
 ## Config
 
+bookmode: defaults to true. If false, displays in chat instead of book.
 language: source language to retrieve articles from. eg: 'es' or 'de'<br>
 cutoff: amount of p elements to display. Default: 5.
 
-## Donate
+## Acknowledgements 
 
-I plan to implement a fully functional book GUI interface option, including table of contents and actual information screening. If you would like to see this get made, please fund continued development of this plugin  :) <br>
-
-[Donate](https://paypal.me/skylerdv)
+This project uses jedk1 and DarkBlade12's utility classes 
 
 [SpigotMc](https://www.spigotmc.org/resources/mcwiki.35039)<br>
 [Github](https://github.com/skylerdev/mcwiki)<br>

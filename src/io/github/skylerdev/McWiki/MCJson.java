@@ -9,6 +9,17 @@ public class MCJson extends JSONObject {
         super();
     }
 
+    public MCJson(String text) {
+        super();
+        setText(text);
+    }
+    
+    public MCJson(String text, String color) {
+        super();
+        setText(text);
+        setColor(color);
+    }
+
     public void setText(String t) {
         this.put("text", t);
     }

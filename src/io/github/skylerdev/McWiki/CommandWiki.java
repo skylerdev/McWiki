@@ -1,15 +1,18 @@
 package io.github.skylerdev.McWiki;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.BookMeta;
 import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -20,11 +23,11 @@ import org.jsoup.select.Elements;
 
 public class CommandWiki implements CommandExecutor {
 
-    //private static final Logger LOGGER = Logger.getLogger("McWiki");
-   //private static final Plugin mcwiki = Bukkit.getPluginManager().getPlugin("McWiki");
+    // private static final Logger LOGGER = Logger.getLogger("McWiki");
+    // private static final Plugin mcwiki =
+    // Bukkit.getPluginManager().getPlugin("McWiki");
 
     final String selector = "div[id=mw-content-text] > p";
-    
 
     @Override
     public boolean onCommand(final CommandSender sender, Command cmd, String label, String[] args) {
@@ -33,19 +36,19 @@ public class CommandWiki implements CommandExecutor {
                 return false;
             }
 
-            FileConfiguration config = Bukkit.getPluginManager().getPlugin("McWiki").getConfig();
+            final FileConfiguration config = Bukkit.getPluginManager().getPlugin("McWiki").getConfig();
+            
+            final String lang = config.getString("language");
+            final boolean bookMode = config.getBoolean("bookmode");
+            final int cutoff = config.getInt("cutoff");
             
             final String article = underscore(args);
 
-            final String lang = config.getString("language");
-        //    final boolean bookMode = McWiki.getBookMode();
-            final int cutoff = config.getInt("cutoff");
-            
             final String articleurl;
-            if(lang.equals("en")) {
+            if (lang.equals("en")) {
                 articleurl = "http://www.minecraft.gamepedia.com/" + article;
-            }else {
-                articleurl = "http://www.minecraft-"+lang+".gamepedia.com/" + article;
+            } else {
+                articleurl = "http://www.minecraft-" + lang + ".gamepedia.com/" + article;
             }
 
             asyncFetchArticle(articleurl, new DocumentGetCallback() {
@@ -57,62 +60,90 @@ public class CommandWiki implements CommandExecutor {
                         sender.sendMessage("404 error. Check the article name and try again.");
                         return;
                     }
+
                     String title = doc.getElementById("firstHeading").text();
 
-                    sender.sendMessage("§d>>>  MCWIKI: " + title + "§d  <<<");
-
-                    Elements main = doc.select(selector);
                     JSONArray json = new JSONArray();
-                    json.add(""); // resets inheritance
+                    Elements main = doc.select(selector);
 
-                    int lines = 0;
                     for (Element p : main) {
-                        List<Node> inner = p.childNodes();
-                        for (Node n : inner) {
-                            if (n instanceof Element) {
 
+                        List<Node> inner = p.childNodes();
+                        JSONArray line = new JSONArray();
+                        line.add("");
+                        
+                        for (Node n : inner) {
+
+                            if (n instanceof Element) {
                                 Element e = (Element) n;
 
                                 if (e.is("a")) {
                                     Link l = new Link(e);
-                                    json.add(l);
-
+                                    line.add(l);
                                 } else if (e.is("b")) {
                                     Bold b = new Bold(e);
-                                    json.add(b);
-
+                                    line.add(b);
                                 } else if (e.is("i")) {
                                     Italic i = new Italic(e);
-                                    json.add(i);
-
-                                } else if (e.is("span")) {
-                                    // ignore span for now
-
+                                    line.add(i);
                                 }
-
                             }
                             if (n instanceof TextNode) {
-                                JSONObject text = new JSONObject();
-                                text.put("text", ((TextNode) n).text());
-
-                                json.add(text);
-
+                                MCJson text = new MCJson(((TextNode) n).text());
+                                line.add(text);
                             }
                         }
 
-                        json.add("\n");
-                        lines++;
-                        // cutoff
-                        if (lines > cutoff) {
-                            Link pagelink = new Link("§d>>>   Limit reached. Click me to read more   <<<", articleurl);
-                            json.add(pagelink);
-                            break;
-                        }
+                        line.add("\n");
+                        json.add(line);
                     }
 
-                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
-                            "tellraw " + sender.getName() + " " + json.toString());
+                    // Meta formatting for book or chat
 
+                    if (bookMode) {
+
+                        List<String> pages = new ArrayList<String>();
+                        pages.add(BookDefaults.titlePage(title, articleurl)); 
+                        for (int i = 0; i < json.size() - 1; i++) {                  
+                            pages.add(json.get(i).toString());                        
+                        }
+                        pages.add(BookDefaults.endPage());
+                      
+                        ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
+                        BookMeta meta = (BookMeta) book.getItemMeta();
+                        meta.setTitle("");
+                        meta.setAuthor("");
+                        BookUtil.setPages(meta, pages);
+                        book.setItemMeta(meta);
+                        BookUtil.openBook(book, Bukkit.getPlayer(sender.getName()));
+                        
+                    } else {
+
+                        // chatcutoff handler
+                       
+                        MCJson chatBottom = new MCJson();
+                        chatBottom.setClick("open_url", articleurl);
+                        chatBottom.setHover("show_text", "Open this article in your browser.");
+                        chatBottom.setColor("light_purple");
+                        
+                        if (cutoff < json.size()) {
+                            chatBottom.setText(" >> Cutoff reached. [Open in web] << ");
+                        } else {
+                            chatBottom.setText(" >> End of article. [Open in web] << ");
+                        }
+
+                        for (int i = json.size()-1; i > cutoff; i--) {
+                            json.remove(i);
+                        }
+
+                        MCJson chatTop = new MCJson("§d >> §6§l" + title + "§d << \n");
+
+                        json.add(0, chatTop);
+                        json.add(json.size(), chatBottom);
+
+                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
+                                "tellraw " + sender.getName() + " " + json.toString());
+                    }
                 }
             });
 
@@ -144,8 +175,8 @@ public class CommandWiki implements CommandExecutor {
                         }
                     });
                 } catch (IOException e) {
-                    // ERROR. Must be handled by callback code. 
-                    // Probably not the right way to do this xdddd
+                    // ERROR. Must be handled by callback code.
+                    // Probably not the right way to do this but oh well
                     Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
                         @Override
                         public void run() {
