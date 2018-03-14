@@ -13,9 +13,9 @@
 language: en
 
 #Whether to use the chat, or the default method of a book.
-#Defaults to false
+#Defaults to true
 
-chatmode: false
+bookmode: true
 
 #How many <p> elements to show in the chat before stopping.
 #Defaults to 5. Only effects if chatmode is true.
