@@ -23,24 +23,6 @@ public class MCFont {
     private String prefix = "";
     private String suffix = "";
 
-    public MCFont(MCFont font) {
-
-        setColor(font.getColor());
-        setBold(font.isBold());
-        setStrikethrough(font.isStrikethrough());
-        setItalic(font.isItalic());
-        setUnderlined(font.isUnderlined());
-
-        setClickAction(font.getClickAction());
-        setClickValue(font.getClickValue());
-        setHoverAction(font.getClickAction());
-        setHoverValue(font.getHoverValue());
-
-        setPrefix(font.getPrefix());
-        setSuffix(font.getSuffix());
-
-    }
-
     public MCFont() {
         // empty font, default styling
 

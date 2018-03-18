@@ -38,6 +38,8 @@ public class MCJson extends JSONObject {
         setUnderlined(font.isUnderlined());
         setStrikethrough(font.isStrikethrough());
         
+        setText(font.getPrefix() + this.get("text") + font.getSuffix());
+                
         setClick(font.getClickAction(), font.getClickValue());
         setHover(font.getHoverAction(), font.getHoverValue());
         
@@ -65,7 +67,7 @@ public class MCJson extends JSONObject {
     }
     
     public void setStrikethrough(boolean b) {
-        this.put("strikethrough", true);
+        this.put("strikethrough", b);
     }
 
     public void setClick(String action, String value) {
