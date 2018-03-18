@@ -1,7 +1,5 @@
 package io.github.skylerdev.McWiki;
 
-public class Book {
-    
-    
+public class ConfigHandler {
 
 }
