@@ -136,16 +136,14 @@ public class CommandWiki implements CommandExecutor {
                         json.add(line);
                     }
 
-                    // Meta formatting for book or chat
-
                     if (bookMode) {
 
                         List<String> pages = new ArrayList<String>();
                         pages.add(BookDefaults.titlePage(title, articleurl));
-                        for (int i = 0; i < json.size() - 1; i++) {
+                        for (int i = 0; i < json.size(); i++) {
                             pages.add(json.get(i).toString());
                         }
-                        pages.add(BookDefaults.endPage());
+                        pages.add(BookDefaults.endPage(title, articleurl));
 
                         ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
                         BookMeta meta = (BookMeta) book.getItemMeta();

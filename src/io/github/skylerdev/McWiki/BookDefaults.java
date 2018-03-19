@@ -22,27 +22,28 @@ public class BookDefaults {
 
         MCJson sup = new MCJson("Displaying 1 p per page. Images and table data omitted.", "gray");
         titlepage.add(sup);
-        titlepage.add("\n\n\n");
+        titlepage.add("\n\n\n     ");
 
-        MCJson link = new Link("     [Full Article]", aurl);
+        MCJson link = new MCJson("[Full Article]");
+        link.setClick("open_url", aurl);
+        link.setHover("show_text", "Open this article in your browser.");
         link.setColor("aqua");
         titlepage.add(link);
 
         return titlepage.toString();
     }
 
-    public static String endPage() {
+    public static String endPage(String atitle, String aurl) {
+
+        // JSONArray endpage = new JSONArray();
+        // TODO: show article metadata
 
         MCJson title = new MCJson(" >> End of Article");
+
         title.setColor("dark_aqua");
 
         return title.toString();
 
     }
 
-    public static String debugPage() {
-        MCJson debug = new MCJson("McWiki 2.1. Made with love by skylerdev <3");
-
-        return debug.toString();
-    }
 }

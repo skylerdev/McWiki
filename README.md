@@ -1,6 +1,6 @@
 # McWiki
 
-"For the noob in all of us"
+"Putting the gamepedia into the game"
 
 This plugin aims to present information that can only be accessed through the minecraft wiki (externally) in game (internally).
 
