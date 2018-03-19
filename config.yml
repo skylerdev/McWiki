@@ -19,7 +19,7 @@ bookmode: true
 #How many <p> elements to show in the chat before stopping.
 #Defaults to 5. Only effects if bookmode is false.
 
-chatcutoff: 5
+cutoff: 5
 
 #The source domain to pull wiki pages from. 
 #Can be set to any wiki-like formatted site. 

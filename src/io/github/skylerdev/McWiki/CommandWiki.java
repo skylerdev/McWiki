@@ -78,9 +78,9 @@ public class CommandWiki implements CommandExecutor {
 
             // if the domain is default but the language isnt
             if (curl.equals("minecraft.gamepedia.com") && !lang.equals("en")) {
-                articleurl = "http://www.minecraft-" + lang + ".gamepedia.com/" + article;
+                articleurl = "http://minecraft-" + lang + ".gamepedia.com/" + article;
             } else {
-                articleurl = "http://www." + curl + "/" + article;
+                articleurl = "http://" + curl + "/" + article;
             }
 
             asyncFetchArticle(articleurl, new DocumentGetCallback() {
