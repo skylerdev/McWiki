@@ -23,11 +23,48 @@ import org.jsoup.select.Elements;
 
 public class CommandWiki implements CommandExecutor {
 
-    // private static final Logger LOGGER = Logger.getLogger("McWiki");
-    // private static final Plugin mcwiki =
-    // Bukkit.getPluginManager().getPlugin("McWiki");
+    private final String selector = "div[id=mw-content-text] > p";
 
-    final String selector = "div[id=mw-content-text] > p";
+    private final McWiki plugin;
+    public FileConfiguration config;
+
+    private String lang;
+    private boolean bookMode;
+    private int cutoff;
+    private String curl;
+
+    MCFont link;
+    MCFont bold;
+    MCFont italic;
+    MCFont header1;
+    MCFont header2;
+
+    public CommandWiki(McWiki plugin) {
+
+        this.plugin = plugin;
+        this.config = plugin.getConfig();
+
+        lang = config.getString("language");
+        bookMode = config.getBoolean("bookmode");
+        cutoff = config.getInt("cutoff");
+        curl = config.getString("customsite");
+
+        link = new MCFont();
+        link.setColor("aqua");
+        link.setPrefix("[");
+        link.setSuffix("]");
+
+        bold = new MCFont();
+        bold.setBold(true);
+        bold.setColor("dark_aqua");
+
+        italic = new MCFont();
+        italic.setItalic(true);
+
+        header1 = new MCFont();
+        header2 = new MCFont();
+
+    }
 
     @Override
     public boolean onCommand(final CommandSender sender, Command cmd, String label, String[] args) {
@@ -36,19 +73,14 @@ public class CommandWiki implements CommandExecutor {
                 return false;
             }
 
-            final FileConfiguration config = Bukkit.getPluginManager().getPlugin("McWiki").getConfig();
-            
-            final String lang = config.getString("language");
-            final boolean bookMode = config.getBoolean("bookmode");
-            final int cutoff = config.getInt("cutoff");
-            
             final String article = underscore(args);
-
             final String articleurl;
-            if (lang.equals("en")) {
-                articleurl = "http://www.minecraft.gamepedia.com/" + article;
+
+            // if the domain is default but the language isnt
+            if (curl.equals("minecraft.gamepedia.com") && !lang.equals("en")) {
+                articleurl = "http://minecraft-" + lang + ".gamepedia.com/" + article;
             } else {
-                articleurl = "http://www.minecraft-" + lang + ".gamepedia.com/" + article;
+                articleurl = "http://" + curl + "/" + article;
             }
 
             asyncFetchArticle(articleurl, new DocumentGetCallback() {
@@ -67,30 +99,36 @@ public class CommandWiki implements CommandExecutor {
                     Elements main = doc.select(selector);
 
                     for (Element p : main) {
-
                         List<Node> inner = p.childNodes();
                         JSONArray line = new JSONArray();
                         line.add("");
-                        
+
                         for (Node n : inner) {
 
                             if (n instanceof Element) {
                                 Element e = (Element) n;
 
                                 if (e.is("a")) {
-                                    Link l = new Link(e);
-                                    line.add(l);
+                                    String linkto = e.attr("href");
+                                    MCJson a = new MCJson(e.text(), link);
+                                    if (linkto.startsWith("/")) {
+                                        a.setClick("run_command", "/wiki " + linkto.substring(1));
+                                        a.setHover("show_text", "Click to show this article.");
+                                    } else {
+                                        a.setClick("open_url", e.attr("href"));
+                                        a.setHover("show_text", "External Link");
+                                    }
+                                    line.add(a);
                                 } else if (e.is("b")) {
-                                    Bold b = new Bold(e);
-                                    line.add(b);
+                                    line.add(new MCJson(e.text(), bold));
                                 } else if (e.is("i")) {
-                                    Italic i = new Italic(e);
-                                    line.add(i);
+                                    line.add(new MCJson(e.text(), italic));
+                                } else if (e.is("span")) {
+
                                 }
                             }
                             if (n instanceof TextNode) {
-                                MCJson text = new MCJson(((TextNode) n).text());
-                                line.add(text);
+                                line.add(new MCJson(((TextNode) n).text()));
                             }
                         }
 
@@ -103,12 +141,12 @@ public class CommandWiki implements CommandExecutor {
                     if (bookMode) {
 
                         List<String> pages = new ArrayList<String>();
-                        pages.add(BookDefaults.titlePage(title, articleurl)); 
-                        for (int i = 0; i < json.size() - 1; i++) {                  
-                            pages.add(json.get(i).toString());                        
+                        pages.add(BookDefaults.titlePage(title, articleurl));
+                        for (int i = 0; i < json.size() - 1; i++) {
+                            pages.add(json.get(i).toString());
                         }
                         pages.add(BookDefaults.endPage());
-                      
+
                         ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
                         BookMeta meta = (BookMeta) book.getItemMeta();
                         meta.setTitle("");
@@ -116,23 +154,21 @@ public class CommandWiki implements CommandExecutor {
                         BookUtil.setPages(meta, pages);
                         book.setItemMeta(meta);
                         BookUtil.openBook(book, Bukkit.getPlayer(sender.getName()));
-                        
+
                     } else {
 
-                        // chatcutoff handler
-                       
                         MCJson chatBottom = new MCJson();
                         chatBottom.setClick("open_url", articleurl);
                         chatBottom.setHover("show_text", "Open this article in your browser.");
                         chatBottom.setColor("light_purple");
-                        
+
                         if (cutoff < json.size()) {
                             chatBottom.setText(" >> Cutoff reached. [Open in web] << ");
                         } else {
                             chatBottom.setText(" >> End of article. [Open in web] << ");
                         }
 
-                        for (int i = json.size()-1; i > cutoff; i--) {
+                        for (int i = json.size() - 1; i > cutoff; i--) {
                             json.remove(i);
                         }
 
@@ -150,6 +186,7 @@ public class CommandWiki implements CommandExecutor {
             return true;
         }
         return false;
+
     }
 
     /**
@@ -206,5 +243,4 @@ public class CommandWiki implements CommandExecutor {
         }
         return a;
     }
-
 }

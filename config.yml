@@ -4,21 +4,26 @@
 
 #Some quick doublechecks:
 #Use spaces instead of tabs
-#make sure youre indenting properly!
 
-#This determines the SOURCE LANGUAGE to obtain articles from.
+#This determines the source language (if using default minecraft wiki).
 #Defaults to en for English: minecraft-en.gamepedia.com
 #examples: de for Deutsch, es for Espanol, etc. 
 
 language: en
 
-#Whether to use the chat, or the default method of a book.
+#Using book instead of chat to display info.
 #Defaults to true
 
 bookmode: true
 
 #How many <p> elements to show in the chat before stopping.
-#Defaults to 5. Only effects if chatmode is true.
+#Defaults to 5. Only effects if bookmode is false.
 
-chatcutoff: 5
+cutoff: 5
+
+#The source domain to pull wiki pages from. 
+#Can be set to any wiki-like formatted site. 
+#Defaults to minecraft.gamepedia.com
+
+customsite: minecraft.gamepedia.com
 

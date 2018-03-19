@@ -2,12 +2,9 @@ package io.github.skylerdev.McWiki;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
-
-
 
 public class McWiki extends JavaPlugin {
 
@@ -15,10 +12,11 @@ public class McWiki extends JavaPlugin {
 
     @Override
     public void onEnable() {
-
+        
         saveDefaultConfig();
+        
 
-        this.getCommand("wiki").setExecutor(new CommandWiki());
+        this.getCommand("wiki").setExecutor(new CommandWiki(this));
         LOGGER.log(Level.INFO, "[McWiki] Loaded successfully.");
 
     }
@@ -54,6 +52,8 @@ public class McWiki extends JavaPlugin {
 
     public void reload() {
         reloadConfig();
+        this.getCommand("wiki").setExecutor(new CommandWiki(this));
+
     }
 
     @Override

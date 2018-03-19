@@ -23,7 +23,8 @@ Full json text interface<br>
 
 bookmode: defaults to true. If false, displays in chat instead of book.<br>
 language: source language to retrieve articles from. eg: 'es' or 'de'<br>
-cutoff: amount of p elements to display. Default: 5.
+cutoff: amount of p elements to display. Default: 5.<br>
+customsite: url of an unofficial custom wiki-like page to display. 
 
 ## Acknowledgements 
 
