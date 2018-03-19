@@ -15,9 +15,8 @@ public class McWiki extends JavaPlugin {
         
         saveDefaultConfig();
         
-
         this.getCommand("wiki").setExecutor(new CommandWiki(this));
-        LOGGER.log(Level.INFO, "[McWiki] Loaded successfully.");
+        LOGGER.log(Level.INFO, "[McWiki] Loaded " + toString() + " successfully.");
 
     }
 
@@ -36,16 +35,16 @@ public class McWiki extends JavaPlugin {
                     displayHelp(sender);
                 }
             }
+            
             return true;
         }
-
+        
         return true;
-
     }
 
     public void displayHelp(CommandSender sender) {
         sender.sendMessage("§d" + this.toString());
-        sender.sendMessage("§7By §3skylerdev");
+        sender.sendMessage("§7By skylerdev");
         sender.sendMessage("§f/wiki <article>");
         sender.sendMessage("§f/mcwiki <help/reload>");
     }

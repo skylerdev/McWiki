@@ -1,6 +1,6 @@
 name: McWiki
 main: io.github.skylerdev.McWiki.McWiki
-version: 2.2
+version: 2.2.1
 description: A robust and complete minecraft wiki integration into the game.
 author: EdgyKid
 
