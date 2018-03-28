@@ -1,3 +1,4 @@
+
 package io.github.skylerdev.McWiki;
 
 /**
@@ -24,7 +25,6 @@ public class MCFont {
     private String suffix = "";
 
     public MCFont() {
-        // empty font, default styling
 
     }
 
@@ -33,6 +33,7 @@ public class MCFont {
     }
 
     public void setPrefix(String prefix) {
+
         this.prefix = prefix;
     }
 

@@ -16,6 +16,7 @@ public class McWiki extends JavaPlugin {
         saveDefaultConfig();
         
         this.getCommand("wiki").setExecutor(new CommandWiki(this));
+        
         LOGGER.log(Level.INFO, "[McWiki] Loaded " + toString() + " successfully.");
 
     }

@@ -9,7 +9,6 @@ import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import org.json.simple.JSONArray;
@@ -25,8 +24,7 @@ public class CommandWiki implements CommandExecutor {
 
     private final String selector = "div[id=mw-content-text] > p";
 
-    private final McWiki plugin;
-    public FileConfiguration config;
+    public ConfigHandler config;
 
     private String lang;
     private boolean bookMode;
@@ -40,30 +38,18 @@ public class CommandWiki implements CommandExecutor {
     MCFont header2;
 
     public CommandWiki(McWiki plugin) {
-
-        this.plugin = plugin;
-        this.config = plugin.getConfig();
-
+        config = new ConfigHandler(plugin);
+        
+        // config values
         lang = config.getString("language");
-        bookMode = config.getBoolean("bookmode");
-        cutoff = config.getInt("cutoff");
+        bookMode = config.getBool("bookmode");
+        cutoff = config.getCutoff();
         curl = config.getString("customsite");
 
-        link = new MCFont();
-        link.setColor("aqua");
-        link.setPrefix("[");
-        link.setSuffix("]");
-
-        bold = new MCFont();
-        bold.setBold(true);
-        bold.setColor("dark_aqua");
-
-        italic = new MCFont();
-        italic.setItalic(true);
-
-        header1 = new MCFont();
-        header2 = new MCFont();
-
+        // config fonts
+        link = config.constructFont("a");
+        bold = config.constructFont("b");
+        italic = config.constructFont("i");
     }
 
     @Override
@@ -104,7 +90,6 @@ public class CommandWiki implements CommandExecutor {
                         line.add("");
 
                         for (Node n : inner) {
-
                             if (n instanceof Element) {
                                 Element e = (Element) n;
 
@@ -123,9 +108,7 @@ public class CommandWiki implements CommandExecutor {
                                     line.add(new MCJson(e.text(), bold));
                                 } else if (e.is("i")) {
                                     line.add(new MCJson(e.text(), italic));
-                                } else if (e.is("span")) {
-
-                                }
+                                } 
                             }
                             if (n instanceof TextNode) {
                                 line.add(new MCJson(((TextNode) n).text()));
