@@ -1,5 +1,5 @@
 #   //-----------=========-----------\\
-#  ||  Welcome to McWiki's config.    ||
+#  ||    Welcome to MCWiki's config   ||
 #   \\-----------=========-----------//
 
 #Some quick doublechecks:
@@ -27,3 +27,23 @@ cutoff: 5
 
 customsite: minecraft.gamepedia.com
 
+#This section configures the formatting for each element encountered in the wiki page.
+#These are valid HTML elements such as <i> for italic, <a> for link, etc
+#the JSON values for each are entirely configurable, including hover and click action and values.
+#The prefix and suffix strings mark the beginning and end of elements.
+
+format:
+  b:
+    bold: true
+    color: dark_aqua
+  a:
+    prefix: '['
+    suffix: ']'
+    color: aqua
+  i:
+    italic: true
+  h1: 
+    underlined: true
+    color: dark_grey
+   
+ #(note that the link <a> overrides hover text and click action based on link content.)
