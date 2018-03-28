@@ -12,7 +12,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import org.json.simple.JSONArray;
-
+import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -20,6 +20,7 @@ import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 
+@SuppressWarnings("unchecked")
 public class CommandWiki implements CommandExecutor {
 
     private final String selector = "div[id=mw-content-text] > p";
@@ -39,7 +40,7 @@ public class CommandWiki implements CommandExecutor {
 
     public CommandWiki(McWiki plugin) {
         config = new ConfigHandler(plugin);
-        
+
         // config values
         lang = config.getString("language");
         bookMode = config.getBool("bookmode");
@@ -71,11 +72,18 @@ public class CommandWiki implements CommandExecutor {
 
             asyncFetchArticle(articleurl, new DocumentGetCallback() {
 
-                @SuppressWarnings("unchecked")
                 @Override
                 public void onQueryDone(Document doc) {
-                    if (doc.baseUri().equals("404")) {
-                        sender.sendMessage("404 error. Check the article name and try again.");
+
+                    String error = doc.baseUri();
+                    if (error.startsWith("ERROR")) {
+                        if (error.equals("ERROR404")) {
+                            sender.sendMessage("§cERROR: 404. Check the article name and try again.");
+                        } else if (doc.baseUri().equals("ERROR999")) {
+                            sender.sendMessage("§cERROR: IOError: No connection. Talk to your admin.");
+                        } else {
+                            sender.sendMessage("§cERROR: HTTPError: Generic HTTP Error. Wait a while and try again.");
+                        }
                         return;
                     }
 
@@ -108,7 +116,7 @@ public class CommandWiki implements CommandExecutor {
                                     line.add(new MCJson(e.text(), bold));
                                 } else if (e.is("i")) {
                                     line.add(new MCJson(e.text(), italic));
-                                } 
+                                }
                             }
                             if (n instanceof TextNode) {
                                 line.add(new MCJson(((TextNode) n).text()));
@@ -122,20 +130,14 @@ public class CommandWiki implements CommandExecutor {
                     if (bookMode) {
 
                         List<String> pages = new ArrayList<String>();
-                        pages.add(BookDefaults.titlePage(title, articleurl));
+                        pages.add(titlePage(title, articleurl));
+                        // for loop that adds one p (line) to page
                         for (int i = 0; i < json.size(); i++) {
                             pages.add(json.get(i).toString());
                         }
-                        pages.add(BookDefaults.endPage(title, articleurl));
+                        pages.add(endPage(title, articleurl));
 
-                        ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
-                        BookMeta meta = (BookMeta) book.getItemMeta();
-                        meta.setTitle("");
-                        meta.setAuthor("");
-                        BookUtil.setPages(meta, pages);
-                        book.setItemMeta(meta);
-                        BookUtil.openBook(book, Bukkit.getPlayer(sender.getName()));
-
+                        showBook(pages, sender.getName());
                     } else {
 
                         MCJson chatBottom = new MCJson();
@@ -158,6 +160,7 @@ public class CommandWiki implements CommandExecutor {
                         json.add(0, chatTop);
                         json.add(json.size(), chatBottom);
 
+                        //...lol
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
                                 "tellraw " + sender.getName() + " " + json.toString());
                     }
@@ -192,19 +195,44 @@ public class CommandWiki implements CommandExecutor {
                             callback.onQueryDone(doc);
                         }
                     });
-                } catch (IOException e) {
-                    // ERROR. Must be handled by callback code.
-                    // Probably not the right way to do this but oh well
+                } catch (final HttpStatusException e) {
+                    // Http Status error.
                     Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
                         @Override
                         public void run() {
-                            callback.onQueryDone(new Document("404"));
+                            callback.onQueryDone(new Document("ERROR" + e.getStatusCode()));
+                        }
+                    });
+                } catch (IOException e) {
+                    // No connection?
+                    Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
+                        @Override
+                        public void run() {
+                            callback.onQueryDone(new Document("ERROR999"));
                         }
                     });
                 }
 
             }
         });
+    }
+
+    /**
+     * Shows book using BookUtil reflection class.
+     * 
+     * @param pages
+     *            The pages of the book to display.
+     * @param playername
+     *            The name of the player.
+     */
+    private void showBook(List<String> pages, String playername) {
+        ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
+        BookMeta meta = (BookMeta) book.getItemMeta();
+        meta.setTitle("");
+        meta.setAuthor("");
+        BookUtil.setPages(meta, pages);
+        book.setItemMeta(meta);
+        BookUtil.openBook(book, Bukkit.getPlayer(playername));
     }
 
     /**
@@ -224,4 +252,51 @@ public class CommandWiki implements CommandExecutor {
         }
         return a;
     }
+    
+    /**
+     * Title page generator for book.
+     * 
+     * @param atitle
+     * @param aurl
+     * @return
+     */
+    public static String titlePage(String atitle, String aurl) {
+        JSONArray titlepage = new JSONArray();
+        titlepage.add("");
+
+        MCJson title = new MCJson("\n   " + atitle, "dark_aqua");
+        title.setBold(true);
+        titlepage.add(title);
+
+        titlepage.add("\n");
+
+        MCJson subtitle = new MCJson("  Generated by McWiki", "dark_gray");
+        titlepage.add(subtitle);
+
+        titlepage.add("\n\n\n");
+
+        MCJson sup = new MCJson("Displaying 1 p per page. Images and table data omitted.", "gray");
+        titlepage.add(sup);
+        titlepage.add("\n\n\n     ");
+
+        MCJson link = new MCJson("[Full Article]");
+        link.setClick("open_url", aurl);
+        link.setHover("show_text", "Open this article in your browser.");
+        link.setColor("aqua");
+        titlepage.add(link);
+
+        return titlepage.toString();
+    }
+
+    public static String endPage(String atitle, String aurl) {
+        //TODO: Show article meta?
+        
+        MCJson title = new MCJson(" >> End of Article");
+
+        title.setColor("dark_aqua");
+
+        return title.toString();
+
+    }
+
 }
