@@ -3,9 +3,8 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>McWiki</groupId>
 	<artifactId>McWiki</artifactId>
-	<version>2.2.1</version>
-	<name>Mc Wiki</name>
-	<description>wikipedia in a minecraft</description>
+	<version>2.3</version>
+	<name>MCWiki</name>
 	<build>
 		<sourceDirectory>src</sourceDirectory>
 		<plugins>
@@ -75,4 +74,5 @@
 			<type>jar</type>
 		</dependency>
 	</dependencies>
+	<description>Minecraft wiki in a minecraft</description>
 </project>

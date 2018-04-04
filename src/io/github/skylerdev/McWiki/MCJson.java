@@ -38,7 +38,7 @@ public class MCJson extends JSONObject {
         setUnderlined(font.isUnderlined());
         setStrikethrough(font.isStrikethrough());
         
-        setText(font.getPrefix() + this.get("text") + font.getSuffix());
+        setText(font.getPrefix() + this.get("text") + font.getSuffix() + "§r");
                 
         setClick(font.getClickAction(), font.getClickValue());
         setHover(font.getHoverAction(), font.getHoverValue());
@@ -80,7 +80,6 @@ public class MCJson extends JSONObject {
     }
 
     public void setHover(String action, String value) {
-
         JSONObject hover = new JSONObject();
         hover.put("action", action);
         hover.put("value", value);
