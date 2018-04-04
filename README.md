@@ -10,7 +10,9 @@ This plugin aims to present information that can only be accessed through the mi
 Displays information from the minecraft wiki in player chat or book<br>
 Configurable amount of lines in chat<br>
 Multi language support<br>
-Full json text interface<br>
+Full json rich text interface<br>
+Inline links to article sections, other articles, or other sites<br>
+Table of contents support<br>
 
 
 ## Commands

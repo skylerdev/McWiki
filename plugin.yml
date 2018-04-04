@@ -1,14 +1,14 @@
 name: McWiki
 main: io.github.skylerdev.McWiki.McWiki
-version: 2.2.1
-description: A robust and complete minecraft wiki integration into the game.
+version: 2.3
+description: A robust and complete mediawiki integration into the game.
 author: EdgyKid
 
 
 commands: 
   wiki:
     usage: /wiki <article>
-    description: Gives the sender the minecraft wiki article for article.
+    description: Gives the sender the specified wiki article.
     permission: mcwiki.wiki
   mcwiki: 
     usage: /mcwiki
