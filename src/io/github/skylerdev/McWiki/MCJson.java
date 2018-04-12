@@ -30,6 +30,10 @@ public class MCJson extends JSONObject {
         setText(text);
         applyFont(font);
     }
+    
+    public String toString() {
+     return (String) this.getOrDefault("text", "null");
+    }
    
     private void applyFont(MCFont font) {
         setColor(font.getColor());
