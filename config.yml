@@ -3,7 +3,9 @@
 #   \\-----------=========-----------//
 
 #Some quick doublechecks:
-#Use spaces instead of tabs
+#Use spaces instead of tabs!
+#Check for a latest version!
+#Make sure your config isnt out of date!
 
 #This determines the source language (if using default minecraft wiki).
 #Defaults to en for English: minecraft-en.gamepedia.com
@@ -22,28 +24,36 @@ bookmode: true
 cutoff: 5
 
 #The source domain to pull wiki pages from. 
-#Can be set to any wiki-like formatted site. 
+#Can be set to any mediawiki site. 
 #Defaults to minecraft.gamepedia.com
 
 customsite: minecraft.gamepedia.com
 
 #This section configures the formatting for each element encountered in the wiki page.
 #These are valid HTML elements such as <i> for italic, <a> for link, etc
-#the JSON values for each are entirely configurable, including hover and click action and values.
+#the JSON values for each are entirely configurable, including hoveraction/hovervalue/clickaction/clickvalue.
 #The prefix and suffix strings mark the beginning and end of elements.
 
 format:
+#b is for bold, denotes the name of the article in article itself.
   b:
     bold: true
     color: dark_aqua
+#a is for link, linking to other articles or external links. NOTE: Any hover and click values are overridden. 
   a:
     prefix: '['
     suffix: ']'
     color: aqua
+#i is for italic, and is only used in special cases.
   i:
     italic: true
-  h1: 
+#h2 is a header that marks sections of an article. Table of contents entries will be made when encountered.  
+  h2: 
     underlined: true
-    color: dark_grey
-   
- #(note that the link <a> overrides hover text and click action based on link content.)
+    color: gray
+    bold: true
+#h3 is a header that marks subsections of sections. 
+  h3: 
+    color: dark_gray
+    suffix: ':'
+

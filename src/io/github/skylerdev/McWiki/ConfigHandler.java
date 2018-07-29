@@ -58,13 +58,10 @@ public class ConfigHandler {
         return config.getBoolean(path, false);
     }
     
-    public int getCutoff() {
-        return config.getInt("cutoff", 10);
+    public int getInt(String path){
+        return config.getInt(path, 5);
     }
 
-    public static String lang() {
-        // TODO Auto-generated method stub
-        return null;
-    }
+
 
 }
