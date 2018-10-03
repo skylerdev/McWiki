@@ -1,6 +1,12 @@
 package io.github.skylerdev.McWiki;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,6 +18,9 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -28,7 +37,7 @@ public class CommandWiki implements CommandExecutor {
     private String lang;
     private boolean bookMode;
     private int cutoff;
-    private String curl;
+    private String domain;
 
     MCFont link;
     MCFont bold;
@@ -37,6 +46,8 @@ public class CommandWiki implements CommandExecutor {
     MCFont header3;
     MCFont basetext;
 
+    final String api = "https://minecraft.gamepedia.com/api.php";
+
     public CommandWiki(McWiki plugin) {
         config = new ConfigHandler(plugin);
 
@@ -44,7 +55,7 @@ public class CommandWiki implements CommandExecutor {
         lang = config.getString("language");
         bookMode = config.getBool("bookmode");
         cutoff = config.getInt("cutoff");
-        curl = config.getString("customsite");
+        domain = config.getString("customsite");
 
         // config fonts
         link = config.constructFont("a");
@@ -62,65 +73,77 @@ public class CommandWiki implements CommandExecutor {
                 return false;
             }
 
-            final String article = underscore(args);
+            final String article = conjoin(args, "_");
+            final String title = conjoin(args, " ");
             final String articleUrl;
 
             // If domain is default, then use custom language
-            if (curl.equals("minecraft.gamepedia.com") && !lang.equals("en")) {
-                articleUrl = "http://minecraft-" + lang + ".gamepedia.com/" + article;
+            if (domain.equals("minecraft.gamepedia.com") && !lang.equals("en")) {
+                articleUrl = "https://minecraft-" + lang + ".gamepedia.com/" + article;
             } else {
-                articleUrl = "http://" + curl + "/" + article;
+                articleUrl = "http://" + domain + "/" + article;
             }
 
-            asyncFetchArticle(articleUrl, new DocumentGetCallback() {
-
+            asyncFetchArticle(articleUrl, title, new DocumentGetCallback() {
                 @Override
                 public void onQueryDone(Document doc) {
-
-                    String status = doc.baseUri();
-                    if (status.startsWith("ERROR")) {
-                        if (status.equals("ERROR404")) {
-                            sender.sendMessage("§cERROR: 404. Check the article name and try again.");
-                        } else if (status.equals("ERROR999")) {
-                            sender.sendMessage("§cERROR: IOError: No connection. Talk to your admin.");
-                        } else {
-                            sender.sendMessage("§cERROR: HTTPError: Generic HTTP Error. Wait a while and try again.");
-                        }
+                    if (doc == null) {
+                        sender.sendMessage(
+                                "§cERROR: Null pointer: Document returned was null. Check what your last command was and report to github.com/skylerdev");
                         return;
                     }
 
-                    String title = doc.getElementById("firstHeading").text();
+                    switch (doc.baseUri()) {
+                    case "ERROR999":
+                        sender.sendMessage(
+                                "§cERROR: IOException: Might wanna narrow this down.");
+                        break;
+                    case "ERROR555":
+                        sender.sendMessage(
+                                "§cERROR: ParseJSONException: Recieved malformed JSON when trying to retrieve article name.");
+                        break;
+                    case "ERROR404":
+                        sender.sendMessage(
+                                "§cArticle not found. Check the article name and try again.");
+                        break;
+                    case "ERROR000":
+                        sender.sendMessage(
+                                "§cERROR: Null pointer: Null pointer encountered while trying to fetch document.");
+                        break;
+                    default:
+                        if(doc.baseUri().startsWith("ERROR")) {
+                        sender.sendMessage("§cERROR: Generic error.");
+                        }
+                        break;
+                    }
 
-                    Elements mainp = doc.select("div[id=mw-content-text] > p");
+                    String aTitle = doc.title();
+                    Elements mainp = doc.select("p");
 
                     if (bookMode) {
-
-                        List<String> pages = buildPages(doc, title, articleUrl);
+                        List<String> pages = buildPages(doc, aTitle, articleUrl);
                         showBook(pages, sender.getName());
-
                     } else {
-
-                        JSONArray json = chatJson(mainp);
+                        JSONArray chatJson = chatJson(mainp);
                         MCJson chatBottom = chatBottom(articleUrl);
 
-                        if (cutoff < json.size()) {
+                        if (cutoff < chatJson.size()) {
                             chatBottom.setText(" >> Cutoff reached. [Open in web] << ");
                         } else {
                             chatBottom.setText(" >> End of article. [Open in web] << ");
                         }
 
                         // Chop chop
-                        for (int i = json.size() - 1; i > cutoff; i--) {
-                            json.remove(i);
+                        for (int i = chatJson.size() - 1; i > cutoff; i--) {
+                            chatJson.remove(i);
                         }
 
-                        MCJson chatTop = new MCJson("§d >> §6§l" + title + "§d << \n");
-
-                        json.add(0, chatTop);
-                        json.add(chatBottom);
+                        MCJson chatTop = new MCJson("§d >> §6§l" + aTitle + "§d << \n");
+                        chatJson.add(0, chatTop);
+                        chatJson.add(chatBottom);
 
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
-                                "tellraw " + sender.getName() + " " + json.toString());
+                                "tellraw " + sender.getName() + " " + chatJson.toString());
                     }
                 }
             });
@@ -133,7 +156,7 @@ public class CommandWiki implements CommandExecutor {
 
     private List<String> buildPages(Document doc, String title, String url) {
 
-        Elements main = doc.select("div[id=mw-content-text] > p, h2, h3");
+        Elements main = doc.select("p, h2, h3");
 
         ArrayList<String> pages = new ArrayList<String>();
         pages.add(titlePage(title, url));
@@ -151,6 +174,8 @@ public class CommandWiki implements CommandExecutor {
         MCJson space = new MCJson(" ");
         MCJson newline = new MCJson("\n");
 
+        boolean findNextHead = false;
+
         // For each content element
         for (Element mainchild : main) {
 
@@ -164,6 +189,7 @@ public class CommandWiki implements CommandExecutor {
             // Handle big header
             if (mainchild.is("h2")) {
                 if (isOmitted(mainchild)) {
+                    findNextHead = true;
                     continue;
                 }
                 // Newpage *always* for big headers
@@ -185,6 +211,8 @@ public class CommandWiki implements CommandExecutor {
                 contentsPage.add(contentsLink);
                 contentsPage.add(new MCJson("\n"));
 
+                findNextHead = false;
+
             } else if (mainchild.is("h3")) {
                 // Handle little header
 
@@ -194,7 +222,7 @@ public class CommandWiki implements CommandExecutor {
                 currentPage.add(space);
                 currentPageSize += h.length() + 2;
 
-            } else if (mainchild.is("p")) {
+            } else if (mainchild.is("p") && !findNextHead) {
                 // Go through paragraph content
                 List<Node> inner = mainchild.childNodes();
                 for (Node n : inner) {
@@ -280,8 +308,8 @@ public class CommandWiki implements CommandExecutor {
 
     private boolean isOmitted(Element mainchild) {
         String text = mainchild.text();
-        String[] omitted = { "Achievements", "Advancements", "Video", "History", "Trivia", "Gallery", "Navigation",
-                "Contents", "Issues", "References" };
+        String[] omitted = { "Achievements", "Advancements", "Video", "History", "Gallery", "Navigation", "Contents",
+                "Issues", "References" };
         for (int i = 0; i < omitted.length; i++) {
             if (text.contains(omitted[i])) {
                 return true;
@@ -374,17 +402,55 @@ public class CommandWiki implements CommandExecutor {
      *            callback to implement when done fetching.
      * 
      */
-    private void asyncFetchArticle(final String url, final DocumentGetCallback callback) {
+    private void asyncFetchArticle(final String url, final String title, final DocumentGetCallback callback) {
         // async run
         Bukkit.getScheduler().runTaskAsynchronously(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
             @Override
             public void run() {
                 try {
-                    final Document doc = Jsoup.connect(url).get();
+                    // query API, get JSON string
+                    StringBuilder result = new StringBuilder();
+                    URL apiurl = new URL(api + "?action=query&titles=" + title + "&redirects=true&format=json");
+                    HttpURLConnection conn = (HttpURLConnection) apiurl.openConnection();
+                    conn.setRequestMethod("GET");
+                    BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                    String line;
+                    while ((line = rd.readLine()) != null) {
+                        result.append(line);
+                    }
+                    rd.close();
+                    
+                    Logger.getLogger("McWiki").log(Level.INFO, url + " " + title + " " + result.toString());
+
+                    // parse JSON string into object
+                    String newTitle = "";
+                    String redirectedFrom = "";
+                    JSONParser parser = new JSONParser();
+                    JSONObject json = (JSONObject) parser.parse(result.toString());
+
+                    // parse JSON object into title and redirect, if exists
+                    JSONObject query = (JSONObject) json.get("query");
+                    JSONArray normalized = (JSONArray) query.get("normalized");
+                    JSONArray redirects = (JSONArray) query.get("redirects");
+                    if (redirects != null) {
+                        JSONObject redirectsActual = (JSONObject) redirects.get(0);
+                        redirectedFrom = (String) redirectsActual.get("from");
+                        newTitle = (String) redirectsActual.get("to");
+                    } else if (normalized != null) {
+                        JSONObject normalizedActual = (JSONObject) normalized.get(0);
+                        newTitle = (String) normalizedActual.get("to");
+                    }
+
+                    // get raw html, redirect + title metadata
+                    final Document doc = Jsoup.connect(url).data("action", "render").get();
+                    doc.append("<div id='redirect'>" + redirectedFrom + "</div>");
+                    doc.title(newTitle);
+
                     Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
                         @Override
                         public void run() {
                             callback.onQueryDone(doc);
+
                         }
                     });
                 } catch (final HttpStatusException e) {
@@ -396,11 +462,18 @@ public class CommandWiki implements CommandExecutor {
                         }
                     });
                 } catch (IOException e) {
-                    // No connection?
+                    // IOException
                     Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
                         @Override
                         public void run() {
                             callback.onQueryDone(new Document("ERROR999"));
+                        }
+                    });
+                } catch (ParseException e) {
+                    Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
+                        @Override
+                        public void run() {
+                            callback.onQueryDone(new Document("ERROR555"));
                         }
                     });
                 }
@@ -428,20 +501,16 @@ public class CommandWiki implements CommandExecutor {
     }
 
     /**
-     * Helper method, replaces spaces with underscores.
+     * Helper method, joins args to make String.
      * 
      * @param String[]
-     *            Array of strings to conjoin with underscores
+     *            Array of strings to conjoin with a value
      */
-    private String underscore(String[] args) {
-        String a = "";
-        for (int i = 0; i < args.length; i++) {
-            if (i == args.length - 1) {
-                a = a + args[i];
-            } else {
-                a = a + args[i] + "_";
-            }
-        }
+    private String conjoin(String[] args, String value) { 
+        String a = args[0];
+        for (int i = 1; i < args.length; i++) {
+            a = a + value + args[i];
+        } 
         return a;
     }
 
@@ -461,7 +530,6 @@ public class CommandWiki implements CommandExecutor {
         titlepage.add(title);
 
         titlepage.add(new MCJson(" Images, embeds, \n infoboxes, and \n table data omitted. \n\n\n", "gray"));
-
         titlepage.add(new MCJson(" Generated by §lMCWiki§r\n\n\n      ", "dark_gray"));
 
         MCJson full = new MCJson("Full Article", link);
