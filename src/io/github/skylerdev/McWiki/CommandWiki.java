@@ -119,6 +119,12 @@ public class CommandWiki implements CommandExecutor {
 
                     String aTitle = doc.title();
                     Elements mainp = doc.select("p");
+                    
+                    //if mw-parser-output exists, use that instead (newer MediaWikis use this)
+                    Elements optionalOutput = doc.getElementsByClass("mw-parser-output");
+                    if(!optionalOutput.isEmpty()) {
+                        doc.html(optionalOutput.get(0).html());
+                    }
 
                     if (bookMode) {
                         List<String> pages = buildPages(doc, aTitle, articleUrl);
@@ -160,7 +166,7 @@ public class CommandWiki implements CommandExecutor {
 
         ArrayList<String> pages = new ArrayList<String>();
         pages.add(titlePage(title, url));
-        pages.add("Table of contents placeholder page");
+        pages.add("Will be replaced with table of contents later");
 
         JSONArray contentsPage = newPage();
         MCJson contentsHead = new MCJson("Contents\n\n", "dark_gray");
@@ -189,14 +195,19 @@ public class CommandWiki implements CommandExecutor {
             // Handle big header
             if (mainchild.is("h2")) {
                 if (isOmitted(mainchild)) {
+                    //omit all section content if one of ommitted sections
                     findNextHead = true;
                     continue;
                 }
+                //we found the next header, stop omitting
+                findNextHead = false;
+                
                 // Newpage *always* for big headers
                 pages.add(currentPage.toString());
                 currentPage = newPage();
                 currentPageSize = 20;
 
+                
                 String htext = mainchild.text().replaceAll("\\[edit\\]", "");
                 currentPage.add(new MCJson(htext, header2));
                 currentPage.add(space);
@@ -211,7 +222,7 @@ public class CommandWiki implements CommandExecutor {
                 contentsPage.add(contentsLink);
                 contentsPage.add(new MCJson("\n"));
 
-                findNextHead = false;
+                
 
             } else if (mainchild.is("h3")) {
                 // Handle little header
@@ -224,8 +235,8 @@ public class CommandWiki implements CommandExecutor {
 
             } else if (mainchild.is("p") && !findNextHead) {
                 // Go through paragraph content
-                List<Node> inner = mainchild.childNodes();
-                for (Node n : inner) {
+                List<Node> pelems = mainchild.childNodes();
+                for (Node n : pelems) {
 
                     // breakpage if over
                     if (currentPageSize > maxChars) {
