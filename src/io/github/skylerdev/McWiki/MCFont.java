@@ -1,4 +1,3 @@
-
 package io.github.skylerdev.McWiki;
 
 /**
@@ -9,7 +8,10 @@ package io.github.skylerdev.McWiki;
  */
 public class MCFont {
 
-    private String color = "";
+    /**
+     * The color to be displayed, in hex char format.
+     */
+    private String color = " ";
     private boolean bold = false;
     private boolean strikethrough = false;
     private boolean italic = false;
@@ -24,31 +26,57 @@ public class MCFont {
     private String prefix = "";
     private String suffix = "";
 
+    /**
+     * 
+     * Constructs an object of type MCFont.
+     */
     public MCFont() {
 
     }
 
+    /**
+     * Get the prefix to be displayed whenever an MCJson using this type appears.
+     * @return prefix
+     */
     public String getPrefix() {
         return prefix;
     }
 
+    /**
+     * Set the prefix to be displayed whenever an MCJson using this type appears.
+     * @param prefix
+     */
     public void setPrefix(String prefix) {
 
         this.prefix = prefix;
     }
 
+    /**
+     * Get the suffix to be displayed after an MCJson using this font.
+     * @return suffix
+     */
     public String getSuffix() {
         return suffix;
     }
 
+    /**
+     * Set the suffix to be displayed after an MCJson using this font.
+     */
     public void setSuffix(String suffix) {
         this.suffix = suffix;
     }
 
+    /**
+     * Get the color to be displayed for an MCJson using this font.
+     */
     public String getColor() {
         return color;
     }
 
+    /**
+     * Set the color to be displayed after an MCJson using this font.
+     * 
+     */
     public void setColor(String color) {
         this.color = color;
     }
@@ -124,10 +152,12 @@ public class MCFont {
     public void setHoverValue(String hoverValue) {
         this.hoverValue = hoverValue;
     }
+    
     public void setClick(String action, String value) {
         setClickAction(action);
         setClickValue(value);
     }
+    
     public void setHover(String action, String value) {
         setHoverAction(action);
         setHoverValue(value);
