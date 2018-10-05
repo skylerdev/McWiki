@@ -3,8 +3,6 @@ package io.github.skylerdev.McWiki;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
@@ -44,7 +42,6 @@ public class CommandWiki implements CommandExecutor {
     MCFont italic;
     MCFont header2;
     MCFont header3;
-    MCFont basetext;
 
     final String api = "https://minecraft.gamepedia.com/api.php";
 
@@ -95,42 +92,43 @@ public class CommandWiki implements CommandExecutor {
 
                     switch (doc.baseUri()) {
                     case "ERROR999":
-                        sender.sendMessage(
-                                "§cERROR: IOException: Might wanna narrow this down.");
+                        sender.sendMessage("§cERROR: IOException: Might wanna narrow this down.");
                         break;
                     case "ERROR555":
                         sender.sendMessage(
                                 "§cERROR: ParseJSONException: Recieved malformed JSON when trying to retrieve article name.");
                         break;
                     case "ERROR404":
-                        sender.sendMessage(
-                                "§cArticle not found. Check the article name and try again.");
+                        sender.sendMessage("§cArticle not found. Check the article name and try again.");
                         break;
                     case "ERROR000":
                         sender.sendMessage(
                                 "§cERROR: Null pointer: Null pointer encountered while trying to fetch document.");
                         break;
                     default:
-                        if(doc.baseUri().startsWith("ERROR")) {
-                        sender.sendMessage("§cERROR: Generic error.");
+                        if (doc.baseUri().startsWith("ERROR")) {
+                            sender.sendMessage("§cERROR: Generic error.");
                         }
                         break;
                     }
 
                     String aTitle = doc.title();
-                    Elements mainp = doc.select("p");
-                    
-                    //if mw-parser-output exists, use that instead (newer MediaWikis use this)
+                    String redirect = doc.getElementById("redirect").text();
+
+                    // if mw-parser-output exists, use that instead (newer MediaWikis use this)
                     Elements optionalOutput = doc.getElementsByClass("mw-parser-output");
-                    if(!optionalOutput.isEmpty()) {
+                    if (!optionalOutput.isEmpty()) {
                         doc.html(optionalOutput.get(0).html());
                     }
 
+                    doc.getElementsByTag("div").remove();
+                    doc.getElementsByTag("table").remove();
+
                     if (bookMode) {
-                        List<String> pages = buildPages(doc, aTitle, articleUrl);
+                        List<String> pages = buildPages(doc, aTitle, redirect, articleUrl);
                         showBook(pages, sender.getName());
                     } else {
-                        JSONArray chatJson = chatJson(mainp);
+                        JSONArray chatJson = chatJson(doc);
                         MCJson chatBottom = chatBottom(articleUrl);
 
                         if (cutoff < chatJson.size()) {
@@ -160,12 +158,12 @@ public class CommandWiki implements CommandExecutor {
 
     }
 
-    private List<String> buildPages(Document doc, String title, String url) {
+    private List<String> buildPages(Document doc, String title, String redirect, String url) {
 
         Elements main = doc.select("p, h2, h3");
 
         ArrayList<String> pages = new ArrayList<String>();
-        pages.add(titlePage(title, url));
+        pages.add(titlePage(title, redirect, url));
         pages.add("Will be replaced with table of contents later");
 
         JSONArray contentsPage = newPage();
@@ -195,19 +193,18 @@ public class CommandWiki implements CommandExecutor {
             // Handle big header
             if (mainchild.is("h2")) {
                 if (isOmitted(mainchild)) {
-                    //omit all section content if one of ommitted sections
+                    // omit all section content if one of ommitted sections
                     findNextHead = true;
                     continue;
                 }
-                //we found the next header, stop omitting
+                // we found the next header, stop omitting
                 findNextHead = false;
-                
+
                 // Newpage *always* for big headers
                 pages.add(currentPage.toString());
                 currentPage = newPage();
                 currentPageSize = 20;
 
-                
                 String htext = mainchild.text().replaceAll("\\[edit\\]", "");
                 currentPage.add(new MCJson(htext, header2));
                 currentPage.add(space);
@@ -221,8 +218,6 @@ public class CommandWiki implements CommandExecutor {
 
                 contentsPage.add(contentsLink);
                 contentsPage.add(new MCJson("\n"));
-
-                
 
             } else if (mainchild.is("h3")) {
                 // Handle little header
@@ -248,7 +243,8 @@ public class CommandWiki implements CommandExecutor {
                     // Element handler
                     if (n instanceof Element) {
                         Element e = (Element) n;
-
+                        MCJson json = new MCJson();
+                        
                         if (e.is("a")) {
                             String linkto = e.attr("href");
                             MCJson a = new MCJson(e.text(), link);
@@ -259,16 +255,16 @@ public class CommandWiki implements CommandExecutor {
                                 a.setClick("open_url", linkto);
                                 a.setHover("show_text", "External Link");
                             }
-                            currentPage.add(a);
-
+                            json = a;
                         } else if (e.is("b")) {
-                            currentPage.add(new MCJson(e.text(), bold));
-
+                            json = new MCJson(e.text(), bold);
                         } else if (e.is("i")) {
-                            currentPage.add(new MCJson(e.text(), italic));
+                            json = new MCJson(e.text(), italic);
                         }
-
-                        currentPageSize += e.text().length();
+ 
+                        currentPage.add(json);
+                        String text = (String) json.get("text");
+                        currentPageSize += text.length();
 
                     } else if (n instanceof TextNode) {
                         TextNode t = (TextNode) n;
@@ -306,7 +302,7 @@ public class CommandWiki implements CommandExecutor {
                 // paragraph end
                 currentPage.add("\n");
                 currentPageSize += 20;
-            }
+            } 
         }
 
         // Replace contents placeholder, add end
@@ -320,7 +316,7 @@ public class CommandWiki implements CommandExecutor {
     private boolean isOmitted(Element mainchild) {
         String text = mainchild.text();
         String[] omitted = { "Achievements", "Advancements", "Video", "History", "Gallery", "Navigation", "Contents",
-                "Issues", "References" };
+                "Issues", "References", "Data values" };
         for (int i = 0; i < omitted.length; i++) {
             if (text.contains(omitted[i])) {
                 return true;
@@ -337,8 +333,9 @@ public class CommandWiki implements CommandExecutor {
         return chatBottom;
     }
 
-    private JSONArray chatJson(Elements main) {
+    private JSONArray chatJson(Document doc) {
         JSONArray json = new JSONArray();
+        Elements main = doc.select("p");
 
         for (Element mainchild : main) {
 
@@ -430,8 +427,6 @@ public class CommandWiki implements CommandExecutor {
                         result.append(line);
                     }
                     rd.close();
-                    
-                    Logger.getLogger("McWiki").log(Level.INFO, url + " " + title + " " + result.toString());
 
                     // parse JSON string into object
                     String newTitle = "";
@@ -464,6 +459,13 @@ public class CommandWiki implements CommandExecutor {
 
                         }
                     });
+                } catch (ParseException e) {
+                    Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
+                        @Override
+                        public void run() {
+                            callback.onQueryDone(new Document("ERROR555"));
+                        }
+                    });
                 } catch (final HttpStatusException e) {
                     // Http Status error.
                     Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
@@ -478,13 +480,6 @@ public class CommandWiki implements CommandExecutor {
                         @Override
                         public void run() {
                             callback.onQueryDone(new Document("ERROR999"));
-                        }
-                    });
-                } catch (ParseException e) {
-                    Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
-                        @Override
-                        public void run() {
-                            callback.onQueryDone(new Document("ERROR555"));
                         }
                     });
                 }
@@ -517,11 +512,11 @@ public class CommandWiki implements CommandExecutor {
      * @param String[]
      *            Array of strings to conjoin with a value
      */
-    private String conjoin(String[] args, String value) { 
+    private String conjoin(String[] args, String value) {
         String a = args[0];
         for (int i = 1; i < args.length; i++) {
             a = a + value + args[i];
-        } 
+        }
         return a;
     }
 
@@ -534,11 +529,17 @@ public class CommandWiki implements CommandExecutor {
      *            article url
      * @return the JSONArray string of the title page
      */
-    public String titlePage(String atitle, String aurl) {
+    public String titlePage(String atitle, String redirect, String aurl) {
         JSONArray titlepage = newPage();
 
-        MCJson title = new MCJson("\n " + atitle + "\n\n", bold);
+        MCJson title = new MCJson("\n " + atitle + "\n", bold);
         titlepage.add(title);
+        if (redirect.isEmpty()) {
+            titlepage.add(new MCJson("\n"));
+        } else {
+            titlepage.add(new MCJson("redirected from ", "gray"));
+            titlepage.add(new MCJson(redirect, "blue"));
+        }
 
         titlepage.add(new MCJson(" Images, embeds, \n infoboxes, and \n table data omitted. \n\n\n", "gray"));
         titlepage.add(new MCJson(" Generated by §lMCWiki§r\n\n\n      ", "dark_gray"));
