@@ -4,6 +4,7 @@ import org.json.simple.JSONObject;
 
 /**
  * A JSON object, specifically formatted for use in minecraft.
+ * See https://minecraft.gamepedia.com/Commands#Raw_JSON_text for details.
  * @author skylerdev
  * 
  */
@@ -49,15 +50,20 @@ public class MCJson extends JSONObject {
         applyFont(font);
     }
     
+    /**
+     * Returns the actual text value stored by this MCJson object.
+     * 
+     */
     public String toString() {
-     return (String) this.getOrDefault("text", "null");
+     return (String) this.getOrDefault("text", "");
     }
    
     /**
      * Applies an MCFont's properties to this MCJson object.
-     * @param font to apply
+     * @param font object to apply
      */
     private void applyFont(MCFont font) {
+        
         setColor(font.getColor());
         setBold(font.isBold());
         setItalic(font.isItalic());
