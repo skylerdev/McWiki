@@ -28,7 +28,9 @@ public class Chat {
     
     JSONArray chatJson;
     
-    public Chat(ConfigHandler config, Document doc, String title, String redirect, String articleUrl) {
+    String domain;
+    
+    public Chat(ConfigHandler config, Document doc,  String redirect, String articleURL, String domain) {
         
         link = config.getFont("a");
         bold = config.getFont("b");
@@ -41,7 +43,7 @@ public class Chat {
         chatJson = buildJson(doc);
 
         
-        MCJson chatBottom = footer(articleUrl);
+        MCJson chatBottom = footer(articleURL);
         if (cutoff < chatJson.size()) {
             chatBottom.setText(" >> Cutoff reached. [Open in web] << ");
         } else {
@@ -53,7 +55,7 @@ public class Chat {
             chatJson.remove(i);
         }
 
-        MCJson chatTop = new MCJson("§d >> §6§l" + title + "§d << \n");
+        MCJson chatTop = new MCJson("§d >> §6§l" + doc.title() + "§d << \n");
         chatJson.add(0, chatTop);
         chatJson.add(chatBottom);
         
@@ -65,7 +67,7 @@ public class Chat {
     
     private JSONArray buildJson(Document doc) {
         JSONArray json = new JSONArray();
-        Elements main = doc.select("p");
+        Elements main = doc.select("body > p, ul, ol");
 
         for (Element mainchild : main) {
 
@@ -74,38 +76,54 @@ public class Chat {
 
             if (mainchild.is("p")) {
                 List<Node> inner = mainchild.childNodes();
-                for (Node n : inner) {
-                    if (n instanceof Element) {
-                        Element e = (Element) n;
-
-                        if (e.is("a")) {
-                            String linkto = e.attr("href");
-                            MCJson a = new MCJson(e.text(), link);
-                            if (linkto.startsWith("/")) {
-                                a.setClick("run_command", "/wiki " + linkto.substring(1));
-                                a.setHover("show_text", "Click to show this article.");
-                            } else {
-                                a.setClick("open_url", linkto);
-                                a.setHover("show_text", "External Link");
-                            }
-                            line.add(a);
-                        } else if (e.is("b")) {
-                            line.add(new MCJson(e.text(), bold));
-                        } else if (e.is("i")) {
-                            line.add(new MCJson(e.text(), italic));
-                        }
-                    }
-                    if (n instanceof TextNode) {
-                        line.add(new MCJson(((TextNode) n).text()));
-                    }
-                }
+                line.add(parseInner(inner));
                 line.add("\n");
-                json.add(line);
+            
+            } else if (mainchild.is("ul, ol")) {
+                for (Element li : mainchild.getElementsByTag("li")) {
+                    line.add(new MCJson("-"));
+                    line.add(parseInner(li.childNodes()));
+                }
             }
+            json.add(line);
 
         }
 
         return json;
+    }
+    
+    private JSONArray parseInner(List<Node> inner) {
+        JSONArray line = new JSONArray();
+        for (Node n : inner) {
+            if (n instanceof Element) {
+                Element e = (Element) n;
+
+                if (e.is("a")) {
+                    String linkto = e.attr("href");
+                    MCJson a = new MCJson(e.text(), link);
+                    if (linkto.contains(domain)) {
+                        a.setClick("run_command", "/wiki " + linkto.lastIndexOf("/"));
+                        a.setHover("show_text", "Click to show this article.");
+                    } else {
+                        a.setClick("open_url", linkto);
+                        a.setHover("show_text", "External Link");
+                    }
+                    line.add(a);
+                } else if (e.is("b")) {
+                    line.add(new MCJson(e.text(), bold));
+                } else if (e.is("i")) {
+                    line.add(new MCJson(e.text(), italic));
+                }else if (e.is("span")) {
+                    line.add(new MCJson(e.text()));
+                }
+            }
+            if (n instanceof TextNode) {
+                line.add(new MCJson(((TextNode) n).text()));
+            }
+        }
+        
+        return line;
+        
     }
     
     public MCJson footer(String url) {

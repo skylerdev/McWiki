@@ -31,7 +31,7 @@ import org.jsoup.select.Elements;
  */
 public class CommandWiki implements CommandExecutor {
 
-    public ConfigHandler config;
+    private ConfigHandler config;
 
     private String lang;
     private boolean bookMode;
@@ -99,8 +99,7 @@ public class CommandWiki implements CommandExecutor {
                         return;
                     }
 
-                    final String title = doc.title();
-                    String redirect = doc.getElementById("redirect").text();
+                    final String redirect = doc.getElementById("redirect").text();
 
                     // if mw-parser-output exists, use that instead (newer MediaWikis use this)
                     Elements optionalOutput = doc.getElementsByClass("mw-parser-output");
@@ -112,11 +111,11 @@ public class CommandWiki implements CommandExecutor {
                     doc.getElementsByTag("table").remove();
 
                     if (bookMode) {
-                        Book book = new Book(config, doc, title, redirect, articleUrl);
+                        Book book = new Book(config, doc, redirect, articleUrl, domain);
                         List<String> pages = book.getPages();
                         showBook(pages, sender.getName());
                     } else {
-                        Chat chat = new Chat(config, doc, title, redirect, articleUrl);
+                        Chat chat = new Chat(config, doc, redirect, articleUrl, domain);
                         JSONArray chatJson = chat.getJson();
 
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
@@ -248,6 +247,12 @@ public class CommandWiki implements CommandExecutor {
             a = a + value + args[i];
         }
         return a;
+    }
+    
+    public void reload() {
+        lang = config.getString("language");
+        bookMode = config.getBool("bookmode");
+        domain = config.getString("customsite");
     }
 
 }

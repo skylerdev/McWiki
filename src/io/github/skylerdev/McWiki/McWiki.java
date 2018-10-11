@@ -16,6 +16,7 @@ public class McWiki extends JavaPlugin {
 
     private static final Logger LOGGER = Logger.getLogger("McWiki");
     private static ConfigHandler configHandler;
+    private CommandWiki wiki;
 
     /**
      * On enabling the plugin:
@@ -26,7 +27,8 @@ public class McWiki extends JavaPlugin {
         
         configHandler = new ConfigHandler(this);
         
-        this.getCommand("wiki").setExecutor(new CommandWiki(this));
+        wiki = new CommandWiki(this);
+        this.getCommand("wiki").setExecutor(wiki);
         
         LOGGER.log(Level.INFO, "[MCWiki] Loaded " + toString() + " successfully.");
 
@@ -47,7 +49,7 @@ public class McWiki extends JavaPlugin {
                     displayHelp(sender);
                 }
             }
-            
+
             return true;
         }
         
@@ -63,11 +65,13 @@ public class McWiki extends JavaPlugin {
     
     public ConfigHandler getConfigHandler() {
         return configHandler;
+        
     }
 
     public void reload() {
         reloadConfig();
         configHandler.refreshConfig();
+        wiki.reload();
     }
 
     @Override

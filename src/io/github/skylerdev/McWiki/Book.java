@@ -19,15 +19,17 @@ import org.jsoup.select.Elements;
 @SuppressWarnings("unchecked")
 public class Book {
 
-    MCFont link;
-    MCFont bold;
-    MCFont italic;
-    MCFont header2;
-    MCFont header3;
+    private MCFont link;
+    private MCFont bold;
+    private MCFont italic;
+    private MCFont header2;
+    private MCFont header3;
     
-    List<String> bookPages;
+    private List<String> bookPages;
     
-    public Book(ConfigHandler config, Document doc, String title, String redirect, String url) {
+    private String domain;
+    
+    public Book(ConfigHandler config, Document doc, String redirect, String url, String domain) {
         // config fonts
         link = config.getFont("a");
         bold = config.getFont("b");
@@ -35,7 +37,7 @@ public class Book {
         header2 = config.getFont("h2");
         header3 = config.getFont("h3");
         
-        bookPages = buildPages(doc, title, redirect, url);
+        bookPages = buildPages(doc, redirect, url);
         
     }
     
@@ -44,14 +46,14 @@ public class Book {
     }
     
 
-    private List<String> buildPages(Document doc, String title, String redirect, String url) {
+    private List<String> buildPages(Document doc, String redirect, String url) {
 
         ArrayList<String> pages = new ArrayList<String>();
         
-        Elements main = doc.select("p, h2, h3");
+        Elements main = doc.select("body > p, h2, h3, ol, ul");
 
         
-        pages.add(titlePage(title, redirect, url));
+        pages.add(titlePage(doc.title(), redirect, url));
         pages.add("Will be replaced with table of contents later");
 
         JSONArray contentsPage = newPage();
@@ -116,10 +118,11 @@ public class Book {
                 currentPage.add(space);
                 currentPageSize += h.length() + 2;
 
-            } else if (mainchild.is("p") && !findNextHead) {
-                // Go through paragraph content
-                List<Node> pelems = mainchild.childNodes();
-                for (Node n : pelems) {
+            } else if (mainchild.is("p, ol, ul") && !findNextHead) {
+                List<Node> innerelems = mainchild.childNodes();
+                
+               
+                for (Node n : innerelems) {
 
                     // breakpage if over
                     if (currentPageSize > maxChars) {
@@ -136,8 +139,8 @@ public class Book {
                         if (e.is("a")) {
                             String linkto = e.attr("href");
                             MCJson a = new MCJson(e.text(), link);
-                            if (linkto.startsWith("/")) {
-                                a.setClick("run_command", "/wiki " + linkto.substring(1));
+                            if (linkto.contains(domain)) {
+                                a.setClick("run_command", "/wiki " + linkto.substring(linkto.lastIndexOf("/")));
                                 a.setHover("show_text", "Click to show this article.");
                             } else {
                                 a.setClick("open_url", linkto);
@@ -148,7 +151,9 @@ public class Book {
                             json = new MCJson(e.text(), bold);
                         } else if (e.is("i")) {
                             json = new MCJson(e.text(), italic);
-                        }
+                        } else if (e.is("span")) {
+                            json = new MCJson(e.text());
+                        } 
  
                         currentPage.add(json);
                         String text = (String) json.get("text");
@@ -190,16 +195,21 @@ public class Book {
                 // paragraph end
                 currentPage.add("\n");
                 currentPageSize += 20;
-            } else if (mainchild.is("ul") || (mainchild.is("ol"))) {
+            } else if (mainchild.is("ul, ol")) {
                 for (Element li : mainchild.getElementsByTag("li")) {
                     for (Node n : li.childNodes()) {
                         if (n instanceof TextNode) {
                             TextNode t = (TextNode) n;
+                            currentPage.add(new MCJson("\n-"));
 
                             String text = t.text();
                             int length = text.length();
 
                             if (currentPageSize + length > maxChars - 10) {
+                                pages.add(currentPage.toString());
+                                currentPage = newPage();
+                                currentPage.add(new MCJson(text));
+                                currentPageSize = length;
                             }
                         }
                     }
@@ -209,7 +219,7 @@ public class Book {
 
         // Replace contents placeholder, add end
         pages.set(1, contentsPage.toString());
-        pages.add(endPage(title, url));
+        pages.add(endPage());
 
         return pages;
 
@@ -253,7 +263,6 @@ public class Book {
 
     /**
      * Helper method for buildPages.
-     * 
      * @returns a default jsonarray
      */
     private JSONArray newPage() {
@@ -274,6 +283,11 @@ public class Book {
         return backButton;
     }
     
+    /**
+     * Checks if a header is omitted.
+     * @param mainchild
+     * @return
+     */
     private boolean isOmitted(Element mainchild) {
         String text = mainchild.text();
         String[] omitted = { "Achievements", "Advancements", "Video", "History", "Gallery", "Navigation", "Contents",
@@ -290,13 +304,9 @@ public class Book {
     /**
      * End page generator for book.
      * 
-     * @param atitle
-     *            article title
-     * @param aurl
-     *            article url
      * @return the JSONArray string of the ending page
      */
-    public String endPage(String atitle, String aurl) {
+    public String endPage() {
         JSONArray endpage = newPage();
 
         MCJson title = new MCJson(" >> End of article. \n\n\n");
