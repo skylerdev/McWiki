@@ -158,7 +158,7 @@ public class CommandWiki implements CommandExecutor {
                     rd.close();
 
                     // parse JSON string into object
-                    String newTitle = "";
+                    String newTitle = title;
                     String redirectedFrom = " ";
                     JSONParser parser = new JSONParser();
                     JSONObject json = (JSONObject) parser.parse(result.toString());
