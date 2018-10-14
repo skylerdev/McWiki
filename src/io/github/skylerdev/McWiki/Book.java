@@ -41,8 +41,6 @@ public class Book {
         
         bookPages = buildPages(doc, redirect, url);
         
-        
-        
     }
     
     public List<String> getPages(){
@@ -54,7 +52,7 @@ public class Book {
 
         ArrayList<String> pages = new ArrayList<String>();
         
-        Elements main = doc.select("body > p, h2, h3, ol, ul");
+        Elements main = doc.select("body > p, h2, h3, li");
 
         
         pages.add(titlePage(doc.title(), redirect, url));
@@ -122,9 +120,14 @@ public class Book {
                 currentPage.add(space);
                 currentPageSize += h.length() + 2;
 
-            } else if (mainchild.is("p, ol, ul") && !findNextHead) {
-                List<Node> innerelems = mainchild.childNodes();
+            } else if (mainchild.is("p, li") && !findNextHead) {
                 
+                List<Node> innerelems = mainchild.childNodes();  
+                
+                if(mainchild.is("li")) {
+                    currentPage.add("-");
+                    currentPageSize += 1;
+                }
                
                 for (Node n : innerelems) {
 
@@ -144,7 +147,7 @@ public class Book {
                             String linkto = e.attr("href");
                             MCJson a = new MCJson(e.text(), link);
                             if (linkto.contains(domain)) {
-                                a.setClick("run_command", "/wiki " + linkto.substring(linkto.lastIndexOf("/")));
+                                a.setClick("run_command", "/wiki " + linkto.substring(linkto.lastIndexOf("/") + 1));
                                 a.setHover("show_text", "Click to show this article.");
                             } else {
                                 a.setClick("open_url", linkto);
@@ -199,25 +202,6 @@ public class Book {
                 // paragraph end
                 currentPage.add("\n");
                 currentPageSize += 20;
-            } else if (mainchild.is("ul, ol")) {
-                for (Element li : mainchild.getElementsByTag("li")) {
-                    for (Node n : li.childNodes()) {
-                        if (n instanceof TextNode) {
-                            TextNode t = (TextNode) n;
-                            currentPage.add(new MCJson("\n-"));
-
-                            String text = t.text();
-                            int length = text.length();
-
-                            if (currentPageSize + length > maxChars - 10) {
-                                pages.add(currentPage.toString());
-                                currentPage = newPage();
-                                currentPage.add(new MCJson(text));
-                                currentPageSize = length;
-                            }
-                        }
-                    }
-                }
             }
         }
 

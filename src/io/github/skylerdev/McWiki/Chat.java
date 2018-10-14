@@ -43,13 +43,10 @@ public class Chat {
         this.domain = domain;
         
         chatJson = buildJson(doc);
-        
-        
-
-        
+           
         MCJson chatBottom = footer(articleURL);
         if (cutoff < chatJson.size()) {
-            chatBottom.setText(" >> Cutoff reached. [Open in web] << ");
+            chatBottom.setText("\n >> Cutoff reached. [Open in web] << ");
         } else {
             chatBottom.setText(" >> End of article. [Open in web] << ");
         }
@@ -71,26 +68,16 @@ public class Chat {
     
     private JSONArray buildJson(Document doc) {
         JSONArray json = new JSONArray();
-        Elements main = doc.select("body > p, ul, ol");
+        Elements main = doc.select("body > p, li");
 
         for (Element mainchild : main) {
-
-            JSONArray line = new JSONArray();
-            line.add("");
-
-            if (mainchild.is("p")) {
-                List<Node> inner = mainchild.childNodes();
-                line.add(parseInner(inner));
-                line.add("\n");
             
-            } else if (mainchild.is("ul, ol")) {
-                for (Element li : mainchild.getElementsByTag("li")) {
-                    line.add(new MCJson("-"));
-                    line.add(parseInner(li.childNodes()));
+                List<Node> inner = mainchild.childNodes();
+                if(mainchild.is("li")) {
+                    json.add("-");
                 }
-            }
-            json.add(line);
-
+                json.add(parseInner(inner));
+                json.add("\n");
         }
 
         return json;
@@ -98,6 +85,7 @@ public class Chat {
     
     private JSONArray parseInner(List<Node> inner) {
         JSONArray line = new JSONArray();
+        line.add("");
         for (Node n : inner) {
             if (n instanceof Element) {
                 Element e = (Element) n;
@@ -106,9 +94,9 @@ public class Chat {
                     String linkto = e.attr("href");
                     MCJson a = new MCJson(e.text(), link);
                     if (linkto.contains(domain)) {
-                        a.setClick("run_command", "/wiki " + linkto.lastIndexOf("/"));
+                        a.setClick("run_command", "/wiki " + linkto.substring(linkto.lastIndexOf("/")+1));
                         a.setHover("show_text", "Click to show this article.");
-                    } else {
+                    } else {             
                         a.setClick("open_url", linkto);
                         a.setHover("show_text", "External Link");
                     }
