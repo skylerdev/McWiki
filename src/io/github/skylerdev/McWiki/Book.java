@@ -37,7 +37,11 @@ public class Book {
         header2 = config.getFont("h2");
         header3 = config.getFont("h3");
         
+        this.domain = domain;
+        
         bookPages = buildPages(doc, redirect, url);
+        
+        
         
     }
     

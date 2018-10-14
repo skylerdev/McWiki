@@ -40,7 +40,11 @@ public class Chat {
         
         cutoff = config.getInt("cutoff");
         
+        this.domain = domain;
+        
         chatJson = buildJson(doc);
+        
+        
 
         
         MCJson chatBottom = footer(articleURL);
