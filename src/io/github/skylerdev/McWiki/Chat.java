@@ -74,7 +74,7 @@ public class Chat {
             
                 List<Node> inner = mainchild.childNodes();
                 if(mainchild.is("li")) {
-                    json.add("-");
+                    json.add("- ");
                 }
                 json.add(parseInner(inner));
                 json.add("\n");
