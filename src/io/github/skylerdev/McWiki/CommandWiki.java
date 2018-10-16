@@ -36,17 +36,36 @@ public class CommandWiki implements CommandExecutor {
     private String lang;
     private boolean bookMode;
     private String domain;
-
-    final String api = "https://minecraft.gamepedia.com/api.php";
+    private String api;
 
     public CommandWiki(McWiki plugin) {
         config = plugin.getConfigHandler();
+        getConfigValues();
 
-        // config values
+    }
+    
+    public void reload() {
+        getConfigValues();
+    }
+
+    /**
+     * This method assigns current values to use from this plugins ConfigHandler.
+     * It is called whenever the plugin is refreshed.
+     */
+    private void getConfigValues() {
         lang = config.getString("language");
         bookMode = config.getBool("bookmode");
         domain = config.getString("customsite");
-
+        
+        // If domain is default, then use custom language
+        if (domain.equals("minecraft.gamepedia.com") && !lang.equals("en")) {
+            domain = "https://minecraft-" + lang + ".gamepedia.com/";
+        } else {
+            domain = "https://" + domain + "/";
+        }
+        
+        api = domain + "/api.php"; 
+        
     }
 
     @Override
@@ -58,14 +77,7 @@ public class CommandWiki implements CommandExecutor {
 
             final String article = conjoin(args, "_");
             final String title = conjoin(args, " ");
-            final String articleUrl;
-
-            // If domain is default, then use custom language
-            if (domain.equals("minecraft.gamepedia.com") && !lang.equals("en")) {
-                articleUrl = "https://minecraft-" + lang + ".gamepedia.com/" + article;
-            } else {
-                articleUrl = "http://" + domain + "/" + article;
-            }
+            final String articleUrl = domain + article;      
 
             asyncFetchArticle(articleUrl, title, new DocumentGetCallback() {
                 @Override
@@ -101,10 +113,10 @@ public class CommandWiki implements CommandExecutor {
 
                     final String redirect = doc.getElementById("redirect").text();
 
-                    // if mw-parser-output exists, use that instead (newer MediaWikis use this)
+                    // if mw-parser-output exists, use that instead (newer MediaWiki's use this)
                     Elements optionalOutput = doc.getElementsByClass("mw-parser-output");
                     if (!optionalOutput.isEmpty()) {
-                        doc.html(optionalOutput.get(0).html());
+                        doc.selectFirst("body").html(optionalOutput.html());
                     }
 
                     doc.getElementsByTag("div").remove();
@@ -247,12 +259,6 @@ public class CommandWiki implements CommandExecutor {
             a = a + value + args[i];
         }
         return a;
-    }
-    
-    public void reload() {
-        lang = config.getString("language");
-        bookMode = config.getBool("bookmode");
-        domain = config.getString("customsite");
     }
 
 }
