@@ -6,16 +6,29 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 
+/**
+ * McWiki main class. 
+ * A single instance is created by Spigot at runtime.
+ * 
+ * @author skylerdev
+ */
 public class McWiki extends JavaPlugin {
 
     private static final Logger LOGGER = Logger.getLogger("McWiki");
+    private static ConfigHandler configHandler;
+    private CommandWiki wiki;
 
+    /**
+     * On enabling the plugin:
+     */
     @Override
     public void onEnable() {
-        
         saveDefaultConfig();
         
-        this.getCommand("wiki").setExecutor(new CommandWiki(this));
+        configHandler = new ConfigHandler(this);
+        
+        wiki = new CommandWiki(this);
+        this.getCommand("wiki").setExecutor(wiki);
         
         LOGGER.log(Level.INFO, "[MCWiki] Loaded " + toString() + " successfully.");
 
@@ -36,7 +49,7 @@ public class McWiki extends JavaPlugin {
                     displayHelp(sender);
                 }
             }
-            
+
             return true;
         }
         
@@ -49,10 +62,16 @@ public class McWiki extends JavaPlugin {
         sender.sendMessage("§f/wiki <article>");
         sender.sendMessage("§f/mcwiki <help/reload>");
     }
+    
+    public ConfigHandler getConfigHandler() {
+        return configHandler;
+        
+    }
 
     public void reload() {
         reloadConfig();
-        this.getCommand("wiki").setExecutor(new CommandWiki(this));
+        configHandler.refreshConfig();
+        wiki.reload();
     }
 
     @Override

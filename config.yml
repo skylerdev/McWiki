@@ -6,6 +6,7 @@
 #Use spaces instead of tabs!
 #Check for a latest version!
 #Make sure your config isnt out of date!
+#Config version: 2.5
 
 #This determines the source language (if using default minecraft wiki).
 #Defaults to en for English: minecraft-en.gamepedia.com
@@ -26,6 +27,7 @@ cutoff: 5
 #The source domain to pull wiki pages from. 
 #Can be set to any mediawiki site. 
 #Defaults to minecraft.gamepedia.com
+#NOTE: Use of this will ignore the language parameter, so set this domain accordingly.
 
 customsite: minecraft.gamepedia.com
 

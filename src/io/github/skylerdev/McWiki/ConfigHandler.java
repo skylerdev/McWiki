@@ -1,26 +1,53 @@
 package io.github.skylerdev.McWiki;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.bukkit.configuration.file.FileConfiguration;
 
+/**
+ * ConfigHandler is a helper class in conjuction with Bukkits built in FileConfiguration system.
+ * 
+ * @author skyler
+ * @version 2018
+ */
 public class ConfigHandler {
 
     private static FileConfiguration config;
     private static McWiki plugin;
+    private static Map<String, MCFont> fontMap = new HashMap<String, MCFont>();
 
     public ConfigHandler(McWiki mc) {
         plugin = mc;
         config = plugin.getConfig();
-    }
+        
+        loadFonts();
 
+    }
+    
     public FileConfiguration getConfig() {
         return config;
     }
 
     public void refreshConfig() {
         config = plugin.getConfig();
+        loadFonts();
+      
+    }
+    
+    private void loadFonts() {
+        constructFont("a");
+        constructFont("b");
+        constructFont("i");
+        constructFont("h2");
+        constructFont("h3");
+    }
+    
+    private void constructFont(String fontTag) {
+        fontMap.put(fontTag, getConfigFont(fontTag));
     }
 
-    public MCFont constructFont(String e) {
+    private MCFont getConfigFont(String e) {
         MCFont font = new MCFont();
 
         String path = "format." + e + ".";
@@ -44,6 +71,11 @@ public class ConfigHandler {
         return font;
     }
     
+    public MCFont getFont(String font) {
+        return fontMap.get(font);
+    }
+    
+    
     /**
      * Retrieves string value from config. If nonexistent, returns empty string.
      */
@@ -58,6 +90,11 @@ public class ConfigHandler {
         return config.getBoolean(path, false);
     }
     
+    /**
+     * 
+     * @param path
+     * @return
+     */
     public int getInt(String path){
         return config.getInt(path, 5);
     }
