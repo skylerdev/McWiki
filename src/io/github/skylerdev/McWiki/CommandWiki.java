@@ -84,7 +84,7 @@ public class CommandWiki implements CommandExecutor {
                 public void onQueryDone(Document doc) {
                     if (doc == null) {
                         sender.sendMessage(
-                                "§cERROR: Null pointer: Document returned was null. Check what your last command was and report to github.com/skylerdev");
+                                "§cERROR: Null pointer: Document returned was null. Java machine broke. This shouldnt happen. Check what your last command was and report to github.com/skylerdev");
                         return;
                     }
 
@@ -92,18 +92,19 @@ public class CommandWiki implements CommandExecutor {
 
                         switch (doc.baseUri()) {
                         case "ERROR999":
-                            sender.sendMessage("§cERROR: IOException: Might wanna narrow this down.");
+                            sender.sendMessage("§cERROR: IOException. Check console for details. ");
+                            console.sendMessage("§c" + doc.text());
                             break;
                         case "ERROR555":
-                            sender.sendMessage(
-                                    "§cERROR: ParseJSONException: Recieved malformed JSON when trying to retrieve article name.");
+                            sender.sendMessage("§cERROR: ParserException: Recieved malformed JSON when trying to retrieve article name.");
+                            sender.sendMessage("§c" + doc.text());
                             break;
                         case "ERROR404":
                             sender.sendMessage("§cArticle not found. Check the article name and try again.");
                             break;
                         case "ERROR000":
-                            sender.sendMessage(
-                                    "§cERROR: Null pointer: Null pointer encountered while trying to fetch document.");
+                            sender.sendMessage("§cERROR: Null pointer: Null pointer encountered while trying to fetch document.");
+                            sender.sendMessage("§c" + doc.text());
                             break;
                         default:
                             sender.sendMessage("§cERROR: Generic error.");
@@ -193,18 +194,13 @@ public class CommandWiki implements CommandExecutor {
                     doc.appendElement("div").attr("id", "redirect").text(redirectedFrom);
                     doc.title(newTitle);
 
+                    
+                } catch (final ParseException e) {
                     Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
                         @Override
                         public void run() {
-                            callback.onQueryDone(doc);
-
-                        }
-                    });
-                } catch (ParseException e) {
-                    Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
-                        @Override
-                        public void run() {
-                            callback.onQueryDone(new Document("ERROR555"));
+                            
+                            callback.onQueryDone(new Document("ERROR555").appendText(text));
                         }
                     });
                 } catch (final HttpStatusException e) {
@@ -215,14 +211,29 @@ public class CommandWiki implements CommandExecutor {
                             callback.onQueryDone(new Document("ERROR" + e.getStatusCode()));
                         }
                     });
-                } catch (IOException e) {
+                } catch (final IOException e) {
                     // IOException
                     Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
                         @Override
                         public void run() {
+                            e.getMessage();
                             callback.onQueryDone(new Document("ERROR999"));
                         }
                     });
+                } catch (final NullPointerException e) {
+                    // Null pointer
+                    Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
+                        @Override
+                        public void run() {
+                            e.getMessage();
+                            callback.onQueryDone(new Document("ERROR000"));
+                        }
+                    });
+                } finally {
+                    
+                    
+                    
+                    
                 }
 
             }
