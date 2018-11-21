@@ -24,11 +24,11 @@ public class Book {
     private MCFont italic;
     private MCFont header2;
     private MCFont header3;
-    
+
     private List<String> bookPages;
-    
+
     private String domain;
-    
+
     public Book(ConfigHandler config, Document doc, String redirect, String url, String domain) {
         // config fonts
         link = config.getFont("a");
@@ -36,25 +36,23 @@ public class Book {
         italic = config.getFont("i");
         header2 = config.getFont("h2");
         header3 = config.getFont("h3");
-        
+
         this.domain = domain;
-        
+
         bookPages = buildPages(doc, redirect, url);
-        
+
     }
-    
-    public List<String> getPages(){
+
+    public List<String> getPages() {
         return bookPages;
     }
-    
 
     private List<String> buildPages(Document doc, String redirect, String url) {
 
         ArrayList<String> pages = new ArrayList<String>();
-        
+
         Elements main = doc.select("body > p, h2, h3, li");
 
-        
         pages.add(titlePage(doc.title(), redirect, url));
         pages.add("Will be replaced with table of contents later");
 
@@ -118,14 +116,14 @@ public class Book {
                 currentPageSize += h.length() + 2;
 
             } else if (mainchild.is("p, li") && !findNextHead) {
-                
-                List<Node> innerelems = mainchild.childNodes();  
-                
-                if(mainchild.is("li")) {
+
+                List<Node> innerelems = mainchild.childNodes();
+
+                if (mainchild.is("li")) {
                     currentPage.add("- ");
                     currentPageSize += 2;
                 }
-               
+
                 for (Node n : innerelems) {
 
                     // breakpage if over
@@ -139,7 +137,7 @@ public class Book {
                     if (n instanceof Element) {
                         Element e = (Element) n;
                         MCJson json = new MCJson("");
-                        
+
                         if (e.is("a")) {
                             String linkto = e.attr("href");
                             MCJson a = new MCJson(e.text(), link);
@@ -157,8 +155,8 @@ public class Book {
                             json = new MCJson(e.text(), italic);
                         } else if (e.is("span")) {
                             json = new MCJson(e.text());
-                        } 
- 
+                        }
+
                         currentPage.add(json);
                         String text = (String) json.get("text");
                         currentPageSize += text.length();
@@ -221,11 +219,10 @@ public class Book {
      */
     public String titlePage(String aTitle, String redirect, String aurl) {
         JSONArray titlepage = newPage();
-        
-        
+
         MCJson title = new MCJson("\n " + aTitle + "\n", bold);
         titlepage.add(title);
-        
+
         if (redirect.isEmpty()) {
             titlepage.add(new MCJson("\n\n"));
         } else {
@@ -241,10 +238,10 @@ public class Book {
 
         return titlepage.toString();
     }
-    
 
     /**
      * Helper method for buildPages.
+     * 
      * @returns a default jsonarray
      */
     private JSONArray newPage() {
@@ -264,9 +261,10 @@ public class Book {
         backButton.setClick("change_page", "2");
         return backButton;
     }
-    
+
     /**
      * Checks if a header is omitted.
+     * 
      * @param mainchild
      * @return
      */
@@ -281,7 +279,6 @@ public class Book {
         }
         return false;
     }
-    
 
     /**
      * End page generator for book.
