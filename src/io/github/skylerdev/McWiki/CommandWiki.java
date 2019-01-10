@@ -95,7 +95,6 @@ public class CommandWiki implements CommandExecutor {
                         return;
                     }
                     
-                    //fuck it all errors are fatal
                     if (doc.baseUri().startsWith("ERROR")) {
                         
                         switch (doc.baseUri()) {       
@@ -110,7 +109,7 @@ public class CommandWiki implements CommandExecutor {
                             break;
                         case "ERROR404":
                             sender.sendMessage("§cArticle not found. Check the article name and try again.");
-                            break;
+                            return;
                         case "ERRORNULLDOC":
                             sender.sendMessage(
                                     "§cERROR: Null pointer: Null pointer encountered while trying to fetch document. This... should never happen. Double check your config.");
@@ -125,9 +124,7 @@ public class CommandWiki implements CommandExecutor {
                             sender.sendMessage("§cFATAL ERROR: HTTP status code " + doc.baseUri().substring(5) + ".");
                             return;
                         }
-                        //idk how to attach error content to the document yet !!
-                        //sendConsole(doc.getElementById("errorcontent").toString());
-                        Bukkit.getConsoleSender().sendMessage("[McWiki]: error details from last command: " + doc.text());
+                        sendConsole("[McWiki]: error details from last command: " + doc.text());
                         return;
                     }
 
@@ -224,7 +221,7 @@ public class CommandWiki implements CommandExecutor {
                     Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
                         @Override
                         public void run() {
-                            callback.onQueryDone((Document) new Document("ERRORPE").appendText((e.toString() + api + title)).ownerDocument());
+                            callback.onQueryDone(new Document("ERRORPE").appendText((e.toString())).ownerDocument());
                         }
                     });
 
@@ -233,7 +230,7 @@ public class CommandWiki implements CommandExecutor {
                     Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
                         @Override
                         public void run() {
-                            callback.onQueryDone((Document) new Document("ERRORNULLDOC").appendText((e.toString() + api + title)).ownerDocument());
+                            callback.onQueryDone(new Document("ERRORNULLDOC").appendText((e.toString())).ownerDocument());
                         }
                     });
                     
@@ -268,7 +265,7 @@ public class CommandWiki implements CommandExecutor {
                     Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
                         @Override
                         public void run() {
-                            callback.onQueryDone((Document) new Document("ERRORMF").appendText((e.toString() + api + title)).ownerDocument());
+                            callback.onQueryDone(new Document("ERRORMF").appendText((e.toString())).ownerDocument());
                         }
                     });
                 } catch (final IOException e) {
@@ -277,7 +274,7 @@ public class CommandWiki implements CommandExecutor {
                         @Override
                         public void run() {
 
-                            callback.onQueryDone(new Document("ERRORDC").appendText((e.toString() + api + title)).ownerDocument());
+                            callback.onQueryDone(new Document("ERRORDC").appendText((e.toString())).ownerDocument());
                         }
                     });
                 }
@@ -289,7 +286,7 @@ public class CommandWiki implements CommandExecutor {
     /**
      * Sends message to console.
      */
-     // private void sendConsole(String message) {  Bukkit.getConsoleSender().sendMessage(message); }
+      private void sendConsole(String message) {  Bukkit.getConsoleSender().sendMessage(message); }
 
     /**
      * Shows book using BookUtil reflection class.
