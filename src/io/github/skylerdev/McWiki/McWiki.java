@@ -30,7 +30,7 @@ public class McWiki extends JavaPlugin {
         wiki = new CommandWiki(this);
         this.getCommand("wiki").setExecutor(wiki);
         
-        LOGGER.log(Level.INFO, "[MCWiki] Loaded " + toString() + " successfully.");
+        LOGGER.log(Level.INFO, "[McWiki] Loaded " + toString() + " successfully.");
 
     }
 

@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 
@@ -35,37 +36,38 @@ public class CommandWiki implements CommandExecutor {
 
     private String lang;
     private boolean bookMode;
-    private String domain;
     private String api;
+    private String wikiURL;
+
 
     public CommandWiki(McWiki plugin) {
         config = plugin.getConfigHandler();
         getConfigValues();
 
     }
-    
+
     public void reload() {
         getConfigValues();
     }
 
     /**
-     * This method assigns current values to use from this plugins ConfigHandler.
-     * It is called whenever the plugin is refreshed.
+     * This method assigns current values to use from this plugins ConfigHandler. It
+     * is called whenever the plugin is refreshed.
      */
     private void getConfigValues() {
-        lang = config.getString("language");
-        bookMode = config.getBool("bookmode");
-        domain = config.getString("customsite");
-        
-        // If domain is default, then use custom language
+        lang = config.getLang();
+        bookMode = config.getBook();
+        String domain = config.getDomain();
+        // If domain is default, then use custom language & default api
         if (domain.equals("minecraft.gamepedia.com") && !lang.equals("en")) {
-            domain = "https://minecraft-" + lang + ".gamepedia.com/";
+            wikiURL = "https://minecraft-" + lang + ".gamepedia.com";   
         } else {
-            domain = "https://" + domain + "/";
+            wikiURL = "https://" + domain;
         }
         
-        api = domain + "/api.php"; 
-        
+        api = wikiURL + "/" + "api.php";
+      
+
     }
 
     @Override
@@ -77,38 +79,55 @@ public class CommandWiki implements CommandExecutor {
 
             final String article = conjoin(args, "_");
             final String title = conjoin(args, " ");
-            final String articleUrl = domain + article;      
+            final String articleURL = wikiURL + "/index.php?title=" + article;
 
-            asyncFetchArticle(articleUrl, title, new DocumentGetCallback() {
+            asyncFetchArticle(articleURL, title, new DocumentGetCallback() {
                 @Override
                 public void onQueryDone(Document doc) {
                     if (doc == null) {
                         sender.sendMessage(
-                                "§cERROR: Null pointer: Document returned was null. Java machine broke. This shouldnt happen. Check what your last command was and report to github.com/skylerdev");
+                                "§cERROR: Null pointer: Fetched successfully, but document returned was null. Check what your last command was and report to github.com/skylerdev");
                         return;
                     }
-
+             
+                    if(doc.baseUri().startsWith("ERROR404")) {
+                        sender.sendMessage("§cArticle not found. Check the article name and try again.");    
+                        return;
+                    }
+                    
+                    //fuck it all errors are fatal
                     if (doc.baseUri().startsWith("ERROR")) {
-
-                        switch (doc.baseUri()) {
-                        case "ERROR999":
-                            sender.sendMessage("§cERROR: IOException. Check console for details. ");
-                            console.sendMessage("§c" + doc.text());
+                        
+                        switch (doc.baseUri()) {       
+                         case "ERRORIO":
+                            sender.sendMessage("§cERROR: IOException. Double check your config.");
                             break;
-                        case "ERROR555":
+                        case "ERRORDC":
+                            sender.sendMessage("§eERROR: IOException on retrieval of article (no connection?).  Double check your config. ");
+                            break;
+                        case "ERRORPE":
                             sender.sendMessage("§cERROR: ParserException: Recieved malformed JSON when trying to retrieve article name.");
-                            sender.sendMessage("§c" + doc.text());
                             break;
                         case "ERROR404":
                             sender.sendMessage("§cArticle not found. Check the article name and try again.");
                             break;
-                        case "ERROR000":
-                            sender.sendMessage("§cERROR: Null pointer: Null pointer encountered while trying to fetch document.");
-                            sender.sendMessage("§c" + doc.text());
+                        case "ERRORNULLDOC":
+                            sender.sendMessage(
+                                    "§cERROR: Null pointer: Null pointer encountered while trying to fetch document. This... should never happen. Double check your config.");
+                            break;
+                        case "ERRORMF":
+                            sender.sendMessage("§cERROR: Malformed URL. Please check your MCWIKI config and try again.");
+                            break;
+                        case "ERROR999":
+                            sender.sendMessage("§cERROR: No connection to the internet.");
                             break;
                         default:
-                            sender.sendMessage("§cERROR: Generic error.");
+                            sender.sendMessage("§cFATAL ERROR: HTTP status code " + doc.baseUri().substring(5) + ".");
+                            return;
                         }
+                        //idk how to attach error content to the document yet !!
+                        //sendConsole(doc.getElementById("errorcontent").toString());
+                        Bukkit.getConsoleSender().sendMessage("[McWiki]: error details from last command: " + doc.text());
                         return;
                     }
 
@@ -124,11 +143,11 @@ public class CommandWiki implements CommandExecutor {
                     doc.getElementsByTag("table").remove();
 
                     if (bookMode) {
-                        Book book = new Book(config, doc, redirect, articleUrl, domain);
+                        Book book = new Book(config, doc, redirect, articleURL, wikiURL);
                         List<String> pages = book.getPages();
                         showBook(pages, sender.getName());
                     } else {
-                        Chat chat = new Chat(config, doc, redirect, articleUrl, domain);
+                        Chat chat = new Chat(config, doc, redirect, articleURL, wikiURL);
                         JSONArray chatJson = chat.getJson();
 
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
@@ -157,9 +176,9 @@ public class CommandWiki implements CommandExecutor {
         Bukkit.getScheduler().runTaskAsynchronously(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
             @Override
             public void run() {
+
+                StringBuilder result = new StringBuilder();
                 try {
-                    // query API, get JSON string
-                    StringBuilder result = new StringBuilder();
                     URL apiurl = new URL(api + "?action=query&titles=" + title + "&redirects=true&format=json");
                     HttpURLConnection conn = (HttpURLConnection) apiurl.openConnection();
                     conn.setRequestMethod("GET");
@@ -170,10 +189,22 @@ public class CommandWiki implements CommandExecutor {
                     }
                     rd.close();
 
-                    // parse JSON string into object
-                    String newTitle = title;
-                    String redirectedFrom = " ";
-                    JSONParser parser = new JSONParser();
+                } catch (final IOException e) {
+                  
+                    Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
+                        @Override
+                        public void run() {
+                            e.getMessage();
+                            callback.onQueryDone(new Document("ERRORDC").appendText((e.toString() + api + title)).ownerDocument());
+                        }
+                    });
+                }
+               
+                String newTitle = title;
+                String redirectedFrom = " ";
+                JSONParser parser = new JSONParser();
+                try {
+
                     JSONObject json = (JSONObject) parser.parse(result.toString());
 
                     // parse JSON object into title and redirect, if exists
@@ -188,57 +219,77 @@ public class CommandWiki implements CommandExecutor {
                         JSONObject normalizedActual = (JSONObject) normalized.get(0);
                         newTitle = (String) normalizedActual.get("to");
                     }
-
-                    // get raw html, redirect + title metadata
-                    final Document doc = Jsoup.connect(url).data("action", "render").get();
-                    doc.appendElement("div").attr("id", "redirect").text(redirectedFrom);
-                    doc.title(newTitle);
-
-                    
                 } catch (final ParseException e) {
+                    
                     Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
                         @Override
                         public void run() {
-                            
-                            callback.onQueryDone(new Document("ERROR555").appendText(text));
+                            callback.onQueryDone((Document) new Document("ERRORPE").appendText((e.toString() + api + title)).ownerDocument());
                         }
                     });
+
+                } catch (final NullPointerException e) {
+                    
+                    Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
+                        @Override
+                        public void run() {
+                            callback.onQueryDone((Document) new Document("ERRORNULLDOC").appendText((e.toString() + api + title)).ownerDocument());
+                        }
+                    });
+                    
+                } 
+
+                try {
+
+                    final Document doc = Jsoup.connect(wikiURL + "/index.php").data("action", "render").data("title", title).get();
+                    doc.appendElement("div").attr("id", "redirect").text(redirectedFrom);
+                    doc.title(newTitle);
+                    
+                    Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
+                        @Override
+                        public void run() {
+                            callback.onQueryDone(doc);
+                            
+                        }
+                    });
+
                 } catch (final HttpStatusException e) {
                     // Http Status error.
                     Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
                         @Override
                         public void run() {
+                            
                             callback.onQueryDone(new Document("ERROR" + e.getStatusCode()));
+                         
+                        }
+                    });
+                } catch (final MalformedURLException e) {
+                    //URL is bad.
+                    Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
+                        @Override
+                        public void run() {
+                            callback.onQueryDone((Document) new Document("ERRORMF").appendText((e.toString() + api + title)).ownerDocument());
                         }
                     });
                 } catch (final IOException e) {
-                    // IOException
+                    //Connection error.
                     Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
                         @Override
                         public void run() {
-                            e.getMessage();
-                            callback.onQueryDone(new Document("ERROR999"));
+
+                            callback.onQueryDone(new Document("ERRORDC").appendText((e.toString() + api + title)).ownerDocument());
                         }
                     });
-                } catch (final NullPointerException e) {
-                    // Null pointer
-                    Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
-                        @Override
-                        public void run() {
-                            e.getMessage();
-                            callback.onQueryDone(new Document("ERROR000"));
-                        }
-                    });
-                } finally {
-                    
-                    
-                    
-                    
                 }
 
             }
         });
     }
+
+    /**
+     * Sends message to console.
+     */
+     // private void sendConsole(String message) {  Bukkit.getConsoleSender().sendMessage(message); }
 
     /**
      * Shows book using BookUtil reflection class.

@@ -71,6 +71,18 @@ public class ConfigHandler {
         return font;
     }
     
+    public String getLang() {
+        return config.getString("language", "en");
+    }
+    
+    public boolean getBook() {
+        return config.getBoolean("bookmode", true);
+    }
+    
+    public String getDomain() {
+        return config.getString("customsite", "minecraft.gamepedia.com");
+    }
+    
     public MCFont getFont(String font) {
         return fontMap.get(font);
     }
