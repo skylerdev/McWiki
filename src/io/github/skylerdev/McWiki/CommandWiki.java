@@ -176,7 +176,7 @@ public class CommandWiki implements CommandExecutor {
 
                 StringBuilder result = new StringBuilder();
                 try {
-                    URL apiurl = new URL(api + "?action=query&titles=" + title + "&redirects=true&format=json");
+                    URL apiurl = new URL(api + "?action=query&titles=" + title.replace(" ", "_") + "&redirects=true&format=json");
                     HttpURLConnection conn = (HttpURLConnection) apiurl.openConnection();
                     conn.setRequestMethod("GET");
                     BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));

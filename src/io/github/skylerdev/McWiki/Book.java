@@ -50,16 +50,31 @@ public class Book {
     private List<String> buildPages(Document doc, String redirect, String url) {
 
         ArrayList<String> pages = new ArrayList<String>();
+        ArrayList<JSONArray> toc = new ArrayList<JSONArray>();
 
         Elements main = doc.select("body > p, h2, h3, li");
 
         pages.add(titlePage(doc.title(), redirect, url));
-        pages.add("Will be replaced with table of contents later");
 
         JSONArray contentsPage = newPage();
         MCJson contentsHead = new MCJson("Contents\n\n", "dark_gray");
         contentsHead.setBold(true);
         contentsPage.add(contentsHead);
+
+        // toc placeholder pages
+        int tocEntries = 0;
+        int tocMaxPage = 8;
+        int tocNextMax = 0;
+        for (Element mainchild : main) {
+            if (mainchild.is("h2") && !isOmitted(mainchild)) {
+                tocEntries++;
+                if (tocEntries > tocNextMax) {
+                    tocNextMax += 8;
+                    pages.add("placeholder");
+                }
+            }
+        }
+        int currentContentEntries = 0;
 
         JSONArray currentPage = newPage();
         int currentPageSize = 0;
@@ -67,7 +82,6 @@ public class Book {
 
         boolean findNextHead = false;
 
-        // For each content element
         for (Element mainchild : main) {
 
             // breakpage if over
@@ -87,10 +101,13 @@ public class Book {
                 // we found the next header, stop omitting
                 findNextHead = false;
 
-                // Newpage *always* for big headers
+                currentContentEntries++;
+                // Newpage *always* for big headers, except for the first one 
+               if(!currentPage.equals(newPage())) {
                 pages.add(currentPage.toString());
                 currentPage = newPage();
                 currentPageSize = 20;
+               }
 
                 String htext = mainchild.text();
                 currentPage.add(new MCJson(htext, header2));
@@ -105,6 +122,11 @@ public class Book {
 
                 contentsPage.add(contentsLink);
                 contentsPage.add(new MCJson("\n"));
+
+                if (currentContentEntries % tocMaxPage == 0) {
+                    toc.add(contentsPage);
+                    contentsPage = newPage();
+                }
 
             } else if (mainchild.is("h3")) {
                 // Handle little header
@@ -144,6 +166,10 @@ public class Book {
                             if (linkto.contains(domain)) {
                                 a.setClick("run_command", "/wiki " + linkto.substring(linkto.lastIndexOf("/") + 1));
                                 a.setHover("show_text", "Click to show this article.");
+                                if (linkto.contains("redlink")) {
+                                    a.setColor("dark_red");
+                                    a.setHover("show_text", "§cThis article does not exist.");
+                                }
                             } else {
                                 a.setClick("open_url", linkto);
                                 a.setHover("show_text", "External Link");
@@ -199,9 +225,21 @@ public class Book {
             }
         }
 
+        toc.add(contentsPage);
+
         pages.add(currentPage.toString());
-        // Replace contents placeholder, add end
-        pages.set(1, contentsPage.toString());
+        // Replace contents placeholders, add end
+        if (tocNextMax != 0) {
+            if (tocEntries % tocMaxPage == 0) {
+                for (int i = 1; i < ((tocEntries / tocMaxPage)) + 1; i++) {
+                    pages.set(i, toc.get(i - 1).toString());
+                }
+            } else {
+                for (int i = 1; i < ((tocEntries / tocMaxPage)) + 2; i++) {
+                    pages.set(i, toc.get(i - 1).toString());
+                }
+            }
+        }
         pages.add(endPage());
 
         return pages;
