@@ -41,6 +41,14 @@
 					</execution>
 				</executions>
 			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>8</source>
+					<target>8</target>
+				</configuration>
+			</plugin>
 		</plugins>
 		<resources>
 			<resource>
@@ -63,7 +71,7 @@
 		<dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
-            <version>1.13-R0.1-SNAPSHOT</version>
+            <version>1.16.3-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
 		<dependency>
@@ -71,6 +79,11 @@
 			<artifactId>jsoup</artifactId>
 			<version>1.11.2</version>
 			<type>jar</type>
+		</dependency>
+		<dependency>
+			<groupId>org.spigotmc</groupId>
+			<artifactId>spigot</artifactId>
+			<version>1.16.3-R0.1-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
 	<description>Minecraft wiki in a minecraft</description>
