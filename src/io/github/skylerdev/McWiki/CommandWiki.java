@@ -15,8 +15,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.json.*;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.jsoup.HttpStatusException;
@@ -58,7 +57,7 @@ public class CommandWiki implements CommandExecutor {
         lang = config.getLang();
         bookMode = config.getBook();
         String domain = config.getDomain();
-        // If domain is default, then use custom language & default api
+        // If domain is default, then use custom language
         if (domain.equals("minecraft.gamepedia.com") && !lang.equals("en")) {
             wikiURL = "https://minecraft-" + lang + ".gamepedia.com";   
         } else {
@@ -111,8 +110,7 @@ public class CommandWiki implements CommandExecutor {
                             sender.sendMessage("§cArticle not found. Check the article name and try again.");
                             return;
                         case "ERRORNULLDOC":
-                            sender.sendMessage(
-                                    "§cERROR: Null pointer: Null pointer encountered while trying to fetch document. This... should never happen. Double check your config.");
+                            sender.sendMessage("§cERROR: Null pointer: Null pointer encountered while fetching article. This... should never happen. Double check your config.");
                             break;
                         case "ERRORMF":
                             sender.sendMessage("§cERROR: Malformed URL. Please check your MCWIKI config and try again.");
@@ -146,7 +144,6 @@ public class CommandWiki implements CommandExecutor {
                     } else {
                         Chat chat = new Chat(config, doc, redirect, articleURL, wikiURL);
                         JSONArray chatJson = chat.getJson();
-
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
                                 "tellraw " + sender.getName() + " " + chatJson.toString());
                     }
@@ -175,7 +172,12 @@ public class CommandWiki implements CommandExecutor {
             public void run() {
 
                 StringBuilder result = new StringBuilder();
+                String newTitle = title;
+                String redirectedFrom = " ";
+                JSONParser parser = new JSONParser();
                 try {
+                    
+                    //json retriever
                     URL apiurl = new URL(api + "?action=query&titles=" + title.replace(" ", "_") + "&redirects=true&format=json");
                     HttpURLConnection conn = (HttpURLConnection) apiurl.openConnection();
                     conn.setRequestMethod("GET");
@@ -185,6 +187,46 @@ public class CommandWiki implements CommandExecutor {
                         result.append(line);
                     }
                     rd.close();
+                    
+                    //json parser
+
+                    try {
+
+                        JSONObject json = (JSONObject) parser.parse(result.toString());
+
+                        
+                        JSONObject query = (JSONObject) json.get("query");
+                        JSONArray normalized = (JSONArray) query.get("normalized");
+                        JSONArray redirects = (JSONArray) query.get("redirects");
+                        if (redirects != null) {
+                            JSONObject redirectsActual = (JSONObject) redirects.get(0);
+                            redirectedFrom = (String) redirectsActual.get("from");
+                            newTitle = (String) redirectsActual.get("to");
+                        } else if (normalized != null) {
+                            JSONObject normalizedActual = (JSONObject) normalized.get(0);
+                            newTitle = (String) normalizedActual.get("to");
+                        }
+                    } catch (final ParseException e) {
+                        
+                        Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
+                            @Override
+                            public void run() {
+                                callback.onQueryDone(new Document("ERRORPE").appendText((e.toString())).ownerDocument());
+                            }
+                        });
+
+                 
+                    } catch (final NullPointerException e) {
+                        
+                        Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
+                            @Override
+                            public void run() {
+                                callback.onQueryDone(new Document("ERRORNULLDOC").appendText((e.toString())).ownerDocument());
+                            }
+                        });
+                        
+                    } 
+                    
 
                 } catch (final IOException e) {
                   
@@ -197,44 +239,6 @@ public class CommandWiki implements CommandExecutor {
                     });
                 }
                
-                String newTitle = title;
-                String redirectedFrom = " ";
-                JSONParser parser = new JSONParser();
-                try {
-
-                    JSONObject json = (JSONObject) parser.parse(result.toString());
-
-                    // parse JSON object into title and redirect, if exists
-                    JSONObject query = (JSONObject) json.get("query");
-                    JSONArray normalized = (JSONArray) query.get("normalized");
-                    JSONArray redirects = (JSONArray) query.get("redirects");
-                    if (redirects != null) {
-                        JSONObject redirectsActual = (JSONObject) redirects.get(0);
-                        redirectedFrom = (String) redirectsActual.get("from");
-                        newTitle = (String) redirectsActual.get("to");
-                    } else if (normalized != null) {
-                        JSONObject normalizedActual = (JSONObject) normalized.get(0);
-                        newTitle = (String) normalizedActual.get("to");
-                    }
-                } catch (final ParseException e) {
-                    
-                    Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
-                        @Override
-                        public void run() {
-                            callback.onQueryDone(new Document("ERRORPE").appendText((e.toString())).ownerDocument());
-                        }
-                    });
-
-                } catch (final NullPointerException e) {
-                    
-                    Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
-                        @Override
-                        public void run() {
-                            callback.onQueryDone(new Document("ERRORNULLDOC").appendText((e.toString())).ownerDocument());
-                        }
-                    });
-                    
-                } 
 
                 try {
 
