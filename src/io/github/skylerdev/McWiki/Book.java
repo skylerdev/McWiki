@@ -117,7 +117,7 @@ public class Book {
 
                 // add to contents
                 MCJson contentsLink = new MCJson(htext, link);
-                contentsLink.setHover("show_text", "Jump to this section");
+                contentsLink.setHoverText("Jump to this section");
                 contentsLink.setClick("change_page", "" + (pages.size() + 1));
 
                 contentsPage.add(contentsLink);
@@ -158,33 +158,36 @@ public class Book {
                     // Element handler
                     if (n instanceof Element) {
                         Element e = (Element) n;
-                        MCJson json = new MCJson("");
+                        MCJson eJson = new MCJson("");
 
                         if (e.is("a")) {
                             String linkto = e.attr("href");
-                            MCJson a = new MCJson(e.text(), link);
+                            eJson = new MCJson(e.text(), link);
                             if (linkto.contains(domain)) {
-                                a.setClick("run_command", "/wiki " + linkto.substring(linkto.lastIndexOf("/") + 1));
-                                a.setHover("show_text", "Click to show this article.");
+                                eJson.setClick("run_command", "/wiki " + linkto.substring(linkto.lastIndexOf("/") + 1));
+                                eJson.setHoverText("Click to show this article.");
                                 if (linkto.contains("redlink")) {
-                                    a.setColor("dark_red");
-                                    a.setHover("show_text", "§cThis article does not exist.");
+                                    eJson.setColor("dark_red");
+                                    eJson.setHoverText("§cThis article does not exist.");
                                 }
                             } else {
-                                a.setClick("open_url", linkto);
-                                a.setHover("show_text", "External Link");
+                                eJson.setClick("open_url", linkto);
+                                eJson.setHoverText("External Link");
                             }
-                            json = a;
+                           
                         } else if (e.is("b")) {
-                            json = new MCJson(e.text(), bold);
+                            eJson = new MCJson(e.text(), bold);
                         } else if (e.is("i")) {
-                            json = new MCJson(e.text(), italic);
+                            eJson = new MCJson(e.text(), italic);
                         } else if (e.is("span")) {
-                            json = new MCJson(e.text());
+                            eJson = new MCJson(e.text());
                         }
 
-                        currentPage.add(json);
-                        String text = (String) json.get("text");
+                        if(eJson.getText().isEmpty()) {
+                            continue;
+                        }
+                        currentPage.add(eJson);
+                        String text = (String) eJson.get("text");
                         currentPageSize += text.length();
 
                     } else if (n instanceof TextNode) {
