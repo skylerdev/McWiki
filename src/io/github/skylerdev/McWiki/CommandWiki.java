@@ -7,15 +7,21 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
+import java.util.function.Consumer;
 
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.chat.ComponentSerializer;
+import net.minecraft.server.v1_16_R2.IChatBaseComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.craftbukkit.v1_16_R2.inventory.CraftMetaBook;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
-import org.json.*;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.jsoup.HttpStatusException;
@@ -293,7 +299,7 @@ public class CommandWiki implements CommandExecutor {
       private void sendConsole(String message) {  Bukkit.getConsoleSender().sendMessage(message); }
 
     /**
-     * Shows book using BookUtil reflection class.
+     * Shows book.
      * 
      * @param pages
      *            The pages of the book to display in List<String>
@@ -303,17 +309,30 @@ public class CommandWiki implements CommandExecutor {
     private void showBook(List<String> pages, String playername) {
         ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
         BookMeta meta = (BookMeta) book.getItemMeta();
-        meta.setTitle("");
-        meta.setAuthor("");
-        BookUtil.setPages(meta, pages);
+
+        //Fancy stuff to serialize pages
+        List<IChatBaseComponent> cPages = null;
+        try {
+            cPages = (List<IChatBaseComponent>) CraftMetaBook.class.getDeclaredField("pages").get(meta);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        }
+        for(String page : pages) {
+            IChatBaseComponent cPage = IChatBaseComponent.ChatSerializer.a(page);
+            cPages.add(cPage);
+        }
+        meta.setTitle("McWiki");
+        meta.setAuthor("Article");
         book.setItemMeta(meta);
-        BookUtil.openBook(book, Bukkit.getPlayer(playername));
+        Bukkit.getPlayer(playername).openBook(book);
     }
 
     /**
      * Helper method, joins args to make String.
      * 
-     * @param String[]
+     * @param args
      *            Array of strings to conjoin with a value
      */
     private String conjoin(String[] args, String value) {
