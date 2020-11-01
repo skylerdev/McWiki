@@ -54,8 +54,8 @@ public class MCJson extends JSONObject {
      * Returns the actual text value stored by this MCJson object.
      * 
      */
-    public String toString() {
-     return (String) this.getOrDefault("text", "");
+    public String getText() {
+     return (String) get("text");
     }
    
     /**
@@ -154,6 +154,19 @@ public class MCJson extends JSONObject {
 
         this.put("hoverEvent", hover);
 
+    }
+    
+    /**
+     * Set the hover text for this MCJson object.
+     * @param text
+     */
+    public void setHoverText(String text) {
+        JSONObject hover = new JSONObject();
+        hover.put("action", "show_text");
+        hover.put("value", text);
+        
+        this.put("hoverEvent", hover);
+        
     }
 
 }
