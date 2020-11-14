@@ -1,23 +1,17 @@
 package io.github.skylerdev.McWiki;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.List;
-import java.util.function.Consumer;
+//SPECIAL IMPORTS
+import net.minecraft.server.v1_16_R3.IChatBaseComponent;
+import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftMetaBook;
 
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.chat.ComponentSerializer;
-import net.minecraft.server.v1_16_R2.IChatBaseComponent;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.craftbukkit.v1_16_R2.inventory.CraftMetaBook;
+
+
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import org.json.simple.JSONArray;
@@ -29,17 +23,24 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.List;
+
 /**
  * CommandWiki is called whenever a user runs /wiki.
- * 
+ *
  * @author skyler
  * @version 2018
  */
 public class CommandWiki implements CommandExecutor {
 
-    private ConfigHandler config;
+    private final ConfigHandler config;
 
-    private String lang;
     private boolean bookMode;
     private String api;
     private String wikiURL;
@@ -60,18 +61,18 @@ public class CommandWiki implements CommandExecutor {
      * is called whenever the plugin is refreshed.
      */
     private void getConfigValues() {
-        lang = config.getLang();
+        String lang = config.getLang();
         bookMode = config.getBook();
         String domain = config.getDomain();
         // If domain is default, then use custom language
         if (domain.equals("minecraft.gamepedia.com") && !lang.equals("en")) {
-            wikiURL = "https://minecraft-" + lang + ".gamepedia.com";   
+            wikiURL = "https://minecraft-" + lang + ".gamepedia.com";
         } else {
             wikiURL = "https://" + domain;
         }
-        
+
         api = wikiURL + "/" + "api.php";
-      
+
 
     }
 
@@ -86,7 +87,7 @@ public class CommandWiki implements CommandExecutor {
             final String title = conjoin(args, " ");
             final String articleURL = wikiURL + "/index.php?title=" + article;
 
-            asyncFetchArticle(articleURL, title, new DocumentGetCallback() {
+            asyncFetchArticle(title, new DocumentGetCallback() {
                 @Override
                 public void onQueryDone(Document doc) {
                     if (doc == null) {
@@ -94,15 +95,15 @@ public class CommandWiki implements CommandExecutor {
                                 "§cERROR: Null pointer: Fetched successfully, but document returned was null. Check what your last command was and report to github.com/skylerdev");
                         return;
                     }
-             
+
                     if(doc.baseUri().startsWith("ERROR404")) {
-                        sender.sendMessage("§cArticle not found. Check the article name and try again.");    
+                        sender.sendMessage("§cArticle not found. Check the article name and try again.");
                         return;
                     }
-                    
+
                     if (doc.baseUri().startsWith("ERROR")) {
-                        
-                        switch (doc.baseUri()) {       
+
+                        switch (doc.baseUri()) {
                          case "ERRORIO":
                             sender.sendMessage("§cERROR: IOException. Double check your config.");
                             break;
@@ -164,14 +165,14 @@ public class CommandWiki implements CommandExecutor {
 
     /**
      * Fetches the article from the web, asynchronously.
-     * 
-     * @param url
-     *            url of article to fetch.
+     *
+     * @param title
+     *            title of article to fetch.
      * @param callback
      *            callback to implement when done fetching.
-     * 
+     *
      */
-    private void asyncFetchArticle(final String url, final String title, final DocumentGetCallback callback) {
+    private void asyncFetchArticle(final String title, final DocumentGetCallback callback) {
         // async run
         Bukkit.getScheduler().runTaskAsynchronously(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
             @Override
@@ -182,10 +183,10 @@ public class CommandWiki implements CommandExecutor {
                 String redirectedFrom = " ";
                 JSONParser parser = new JSONParser();
                 try {
-                    
+
                     //json retriever
-                    URL apiurl = new URL(api + "?action=query&titles=" + title.replace(" ", "_") + "&redirects=true&format=json");
-                    HttpURLConnection conn = (HttpURLConnection) apiurl.openConnection();
+                    URL apiUrl = new URL(api + "?action=query&titles=" + title.replace(" ", "_") + "&redirects=true&format=json");
+                    HttpURLConnection conn = (HttpURLConnection) apiUrl.openConnection();
                     conn.setRequestMethod("GET");
                     BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
                     String line;
@@ -193,14 +194,14 @@ public class CommandWiki implements CommandExecutor {
                         result.append(line);
                     }
                     rd.close();
-                    
+
                     //json parser
 
                     try {
 
                         JSONObject json = (JSONObject) parser.parse(result.toString());
 
-                        
+
                         JSONObject query = (JSONObject) json.get("query");
                         JSONArray normalized = (JSONArray) query.get("normalized");
                         JSONArray redirects = (JSONArray) query.get("redirects");
@@ -213,7 +214,7 @@ public class CommandWiki implements CommandExecutor {
                             newTitle = (String) normalizedActual.get("to");
                         }
                     } catch (final ParseException e) {
-                        
+
                         Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
                             @Override
                             public void run() {
@@ -221,21 +222,21 @@ public class CommandWiki implements CommandExecutor {
                             }
                         });
 
-                 
+
                     } catch (final NullPointerException e) {
-                        
+
                         Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
                             @Override
                             public void run() {
                                 callback.onQueryDone(new Document("ERRORNULLDOC").appendText((e.toString())).ownerDocument());
                             }
                         });
-                        
-                    } 
-                    
+
+                    }
+
 
                 } catch (final IOException e) {
-                  
+
                     Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
                         @Override
                         public void run() {
@@ -244,19 +245,19 @@ public class CommandWiki implements CommandExecutor {
                         }
                     });
                 }
-               
+
 
                 try {
 
                     final Document doc = Jsoup.connect(wikiURL + "/index.php").data("action", "render").data("title", title).get();
                     doc.appendElement("div").attr("id", "redirect").text(redirectedFrom);
                     doc.title(newTitle);
-                    
+
                     Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
                         @Override
                         public void run() {
                             callback.onQueryDone(doc);
-                            
+
                         }
                     });
 
@@ -265,9 +266,9 @@ public class CommandWiki implements CommandExecutor {
                     Bukkit.getScheduler().runTask(Bukkit.getPluginManager().getPlugin("McWiki"), new Runnable() {
                         @Override
                         public void run() {
-                            
+
                             callback.onQueryDone(new Document("ERROR" + e.getStatusCode()));
-                         
+
                         }
                     });
                 } catch (final MalformedURLException e) {
@@ -300,13 +301,13 @@ public class CommandWiki implements CommandExecutor {
 
     /**
      * Shows book.
-     * 
+     *
      * @param pages
      *            The pages of the book to display in List<String>
-     * @param playername
+     * @param playerName
      *            The name of the player
      */
-    private void showBook(List<String> pages, String playername) {
+    private void showBook(List<String> pages, String playerName) {
         ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
         BookMeta meta = (BookMeta) book.getItemMeta();
 
@@ -314,9 +315,7 @@ public class CommandWiki implements CommandExecutor {
         List<IChatBaseComponent> cPages = null;
         try {
             cPages = (List<IChatBaseComponent>) CraftMetaBook.class.getDeclaredField("pages").get(meta);
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (NoSuchFieldException e) {
+        } catch (IllegalAccessException | NoSuchFieldException e) {
             e.printStackTrace();
         }
         for(String page : pages) {
@@ -326,12 +325,12 @@ public class CommandWiki implements CommandExecutor {
         meta.setTitle("McWiki");
         meta.setAuthor("Article");
         book.setItemMeta(meta);
-        Bukkit.getPlayer(playername).openBook(book);
+        Bukkit.getPlayer(playerName).openBook(book);
     }
 
     /**
      * Helper method, joins args to make String.
-     * 
+     *
      * @param args
      *            Array of strings to conjoin with a value
      */

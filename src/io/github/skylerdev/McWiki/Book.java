@@ -19,15 +19,15 @@ import org.jsoup.select.Elements;
 @SuppressWarnings("unchecked")
 public class Book {
 
-    private MCFont link;
-    private MCFont bold;
-    private MCFont italic;
-    private MCFont header2;
-    private MCFont header3;
+    private final MCFont link;
+    private final MCFont bold;
+    private final MCFont italic;
+    private final MCFont header2;
+    private final MCFont header3;
 
-    private List<String> bookPages;
+    private final List<String> bookPages;
 
-    private String domain;
+    private final String domain;
 
     public Book(ConfigHandler config, Document doc, String redirect, String url, String domain) {
         // config fonts
@@ -327,7 +327,7 @@ public class Book {
      * @return the JSONArray string of the ending page
      */
     public String endPage() {
-        JSONArray endpage = newPage();
+        JSONArray endPage = newPage();
 
         MCJson title = new MCJson(" >> End of article. \n\n\n");
 
@@ -337,10 +337,10 @@ public class Book {
         start.setClick("change_page", "1");
         start.setHover("show_text", "Jump back to start page.");
 
-        endpage.add(title);
-        endpage.add(start);
+        endPage.add(title);
+        endPage.add(start);
 
-        return endpage.toString();
+        return endPage.toString();
 
     }
 }
